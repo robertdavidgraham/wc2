@@ -61,7 +61,7 @@ perrf (char *fmt, ...)
 void
 report (char *file, count_t ccount, count_t wcount, count_t lcount)
 {
-  printf ("%6lu %6lu %6lu %s\n", lcount, wcount, ccount, file);
+  printf ("%8lu %7lu %7lu %s\n", lcount, wcount, ccount, file);
 }
 
 /* Return true if C is a valid word constituent */
