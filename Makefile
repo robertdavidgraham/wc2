@@ -1,5 +1,5 @@
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2
+CFLAGS = -Wall -Wpedantic -Wextra -O2 -mtune=haswell
 
 all: wc2a wc2b wc2z 
 
@@ -20,6 +20,9 @@ time: pocorgtfo18.pdf wc2a wc2b wc2z
 	/usr/bin/time ./wc2a pocorgtfo18.pdf
 	/usr/bin/time ./wc2b pocorgtfo18.pdf
 	/usr/bin/time ./wc2z pocorgtfo18.pdf
+
+test: wc2a
+	@bash selftest
 
 clean:
 	rm -f wc2a wc2b wc2z
