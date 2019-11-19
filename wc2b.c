@@ -1,6 +1,6 @@
 /*
     A trivial implementation of the word count 'wc' program
-
+    [pointer arithmetic]
 */
 #include <ctype.h>
 #include <stdlib.h>
@@ -65,12 +65,12 @@ void parse_chunk(const char *restrict buf, size_t length,
     int was_space = *inout_state;
     unsigned long long line_count = results->line_count;
     unsigned long long word_count = results->word_count;
-    size_t i;
+    const char *end = buf + length;
     
     /* Run the inner loop. This is where 99.9% of the time is spent
      * in this program. */
-    for (i = 0; i < length; i++) {
-        char c = buf[i];
+    for (; buf < end; buf++) {
+        char c = *buf;
         int is_space = my_isspace[(unsigned char)c];
 
         line_count += (c == '\n');
