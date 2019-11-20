@@ -133,9 +133,9 @@ int main(int argc, char *argv[])
         for (i=1; i<argc; i++) {
             int fd;
 
-            fd = open(argv[1], O_RDONLY | O_BINARY);
+            fd = open(argv[i], O_RDONLY | O_BINARY);
             if (fd == -1) {
-                perror(argv[1]);
+                perror(argv[i]);
                 continue;
             }
 
