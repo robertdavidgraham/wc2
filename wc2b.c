@@ -1,6 +1,6 @@
 /*
     A trivial implementation of the word count 'wc' program
-
+ 
 */
 #include <ctype.h>
 #include <stdlib.h>
