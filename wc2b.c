@@ -1,6 +1,6 @@
 /*
     A trivial implementation of the word count 'wc' program
-    [pointer arithmetic]
+
 */
 #include <ctype.h>
 #include <stdlib.h>
@@ -9,11 +9,14 @@
 
 /* Portability stuff for Windows, macOS, and Linux */
 #ifdef WIN32
+#pragma warning(disable:4996)
 #include <io.h>
-#define open _open
 #define O_RDONLY _O_RDONLY
+#define O_BINARY _O_BINARY
+typedef int ssize_t;
 #else
 #include <unistd.h>
+#define O_BINARY 0
 #endif
 #ifndef STDIN_FILENO
 #define STDIN_FILENO 0
@@ -56,9 +59,9 @@ static unsigned char my_isspace[] = {
  * boundary, we have to remember the 'state' from a previous
  * chunk. 
  */
-void parse_chunk(const char *restrict buf, size_t length, 
-                 struct results * restrict results,  
-                 int * restrict inout_state)
+void parse_chunk(const char * buf, size_t length, 
+                 struct results *results,  
+                 int *inout_state)
 {
     /* Setup optimized variables, so that everything inside the
      * inner loop can be a register */
@@ -69,7 +72,7 @@ void parse_chunk(const char *restrict buf, size_t length,
     
     /* Run the inner loop. This is where 99.9% of the time is spent
      * in this program. */
-    for (; buf < end; buf++) {
+    for ( ; buf < end; buf++) {
         char c = *buf;
         int is_space = my_isspace[(unsigned char)c];
 
@@ -130,7 +133,7 @@ int main(int argc, char *argv[])
         for (i=1; i<argc; i++) {
             int fd;
 
-            fd = open(argv[1], O_RDONLY);
+            fd = open(argv[1], O_RDONLY | O_BINARY);
             if (fd == -1) {
                 perror(argv[1]);
                 continue;

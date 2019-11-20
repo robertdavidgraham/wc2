@@ -60,8 +60,8 @@ static unsigned char my_isspace[] = {
  * chunk. 
  */
 void parse_chunk(const char * buf, size_t length, 
-                 struct results *  results,  
-                 int *  inout_state)
+                 struct results *results,  
+                 int *inout_state)
 {
     /* Setup optimized variables, so that everything inside the
      * inner loop can be a register */
