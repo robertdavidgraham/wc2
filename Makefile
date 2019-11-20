@@ -1,5 +1,5 @@
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2 -mtune=haswell
+CFLAGS = -Wall -Wpedantic -Wextra -O2
 
 all: wc2a wc2b wc2z 
 
