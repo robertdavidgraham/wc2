@@ -1,0 +1,5 @@
+#!/bin/bash          
+            
+F="pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf pocorgtfo18.pdf"
+                   
+time $1 $F $F $F $F $F $F $F $F $F $F
