@@ -1,11 +1,19 @@
 # wc2 - optimizing wc
 
-This tiny project is for exploring the slowness of 'wc', the Unix word count program.
-The 'wc' program is often a benchmark target because it's trivially easy. However,
-despite supposedly written in optimized C, it's fairly slow. Despite being trivial,
-the source code for existing programs are actually fairly complex, and it's hard to
-see exactly where the slowdown happens.
+This tiny project is for exploring the performance of 'wc', the UNIX
+word-count program.
 
-In this project, I write my own version of 'wc' as an optimized target, then work
-backward to see where the performance issues come from.
+This program is often a benchmark because it's trivial. When testing 
+more complex code, you want to benchmark against the most trivial 
+example you can think of. Counting the number of words in a file fits
+this purpose very well.
+
+Nobody wants to optimize this program, of course. There's no need to have
+a fast word-count program. However, this will throw off your benchmarks.
+The 'wc' program may not be written as trivially as you think, and thus,
+may not be a good benchmark comparison.
+
+This project contains an actual trivial implementation 'wc' optimized a
+bit for speed. It's at least 5x (five times) faster than the 'wc' built-in
+to most computers, and sometimes 50x faster.
 
