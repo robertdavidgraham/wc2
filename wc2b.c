@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            parse_file(buf, BUFSIZE, fp, argv[1]);
+            parse_file(buf, BUFSIZE, fp, argv[i]);
 
             fclose(fp);
         }
