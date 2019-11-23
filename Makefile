@@ -1,5 +1,5 @@
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2
+CFLAGS = -Wall -Wpedantic -Wextra -O2 -ansi
 
 all: wc2a wc2b wc2c wc2z 
 
@@ -28,5 +28,5 @@ test: wc2a
 	@bash selftest
 
 clean:
-	rm -f wc2a wc2b wc2z
+	rm -f wc2a wc2b wc2c wc2z
 
