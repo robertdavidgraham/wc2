@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <ctype.h>
-
+#include <sys/wait.h>
 
 /**
  * Tests the filename to make sure it exists

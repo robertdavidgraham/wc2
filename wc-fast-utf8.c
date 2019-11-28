@@ -500,12 +500,10 @@ int is_space(const unsigned char *str, size_t length)
 
 int is_legal(const unsigned char *str, size_t length)
 {
-    struct results results;
     unsigned state = 0;
     unsigned long line_count = 0;
     unsigned long word_count = 0;
     unsigned long char_count = 0;
-    unsigned long illegal_count = 0;
     size_t i;
 
     for (i=0; i<length; i++) {
@@ -524,11 +522,6 @@ int is_legal(const unsigned char *str, size_t length)
             return 1;
     }
 
-    results.line_count = line_count;
-    results.word_count = word_count;
-    results.char_count = char_count;
-    results.illegal_count = illegal_count;
-    results.is_space = (state == NEWLINE || state == WASSPACE) && word_count == 0;
     return 1;
 }
 
@@ -543,7 +536,9 @@ int selftest_legal(void)
         int x;
         int y;
         wchar_t wc;
-        mbstate_t state = {{0}};
+        mbstate_t state;
+       
+	memset(&state, 0, sizeof(state));
         
         if ((i&0xFFFFFF) == 0) {
             fprintf(stderr, "0x%08x\b\b\b\b\b\b\b\b\b\b", i);
