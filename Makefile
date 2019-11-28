@@ -1,7 +1,7 @@
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2 -ansi
+CFLAGS = -Wall -Wpedantic -Wextra -O2
 
-all: wc2a wc2b wc2c wc2z 
+all: wc2a wc2b wc2c wc2z wc-fast-utf8 test-wc
 
 wc2a: wc2a.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -13,6 +13,12 @@ wc2c: wc2c.c
 	$(CC) $(CFLAGS) $< -o $@
 
 wc2z: wc2z.c
+	$(CC) $(CFLAGS) $< -o $@
+
+wc-fast-utf8: wc-fast-utf8.c
+	$(CC) $(CFLAGS) $< -o $@
+
+test-wc: test-wc.c
 	$(CC) $(CFLAGS) $< -o $@
 
 pocorgtfo18.pdf:
@@ -28,5 +34,5 @@ test: wc2a
 	@bash selftest
 
 clean:
-	rm -f wc2a wc2b wc2c wc2z
+	rm -f wc2a wc2b wc2c wc2z wc-fast-utf8 test-wc
 
