@@ -1,5 +1,5 @@
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2
+CFLAGS = -Wall -Wpedantic -Wextra -O2 -ansi
 
 all: wc2a wc2b wc2c wc2z wc-fast-utf8 test-wc
 

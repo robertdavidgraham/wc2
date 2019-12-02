@@ -455,7 +455,64 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     
 }
 
+void **table_p;
 
+unsigned PSTATE(void **p)
+{
+    return ((char*)p - (char*)table_p)/256;
+}
+void **compile_pointers()
+{
+    void **pp;
+    size_t i;
+    size_t j;
+
+    pp = malloc(sizeof(*pp) * 256 * STATE_MAX);
+    if (pp == NULL)
+        abort();
+    table_p = pp;
+    for (i=0; i<STATE_MAX; i++) {
+        for (j=0; j<256; j++) {
+            pp[i*256 + j] = (char*)table_p + table[i][j]*256;
+        }
+    }
+    
+    return pp;
+}
+
+void
+parse_chunk_p(const unsigned char *buf, size_t length, struct results *results, unsigned *inout_state)
+{
+    void **state = (void**)((char*)table_p + *inout_state);
+    size_t i;
+    unsigned long counts[STATE_MAX];
+    if (table_p == NULL)
+        table_p = compile_pointers();
+    
+    state = (void**)((char*)table_p + *inout_state);
+        
+    /* We only care about the first four states, so these will be initialized to zero.
+     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
+    counts[NEWLINE] = 0;
+    counts[NEWWORD] = 0;
+    counts[WASSPACE] = 0;
+    counts[WASWORD] = 0;
+
+    /* This is the inner-loop where 99.9% of the execution time of this program will
+     * be spent. */
+    for (i=0; i<length; i += 1) {
+        unsigned char c = buf[i];
+        state = state[c];
+        counts[((char*)state - (char*)table_p)/256]++;
+    }
+
+    /* Now update the results with what we found in the inner-loop */
+    results->line_count += counts[NEWLINE];
+    results->word_count += counts[NEWWORD];
+    results->char_count += counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
+    results->byte_count += length;
+    *inout_state = (char*)state - (char*)table_p;
+}
 
 static void
 parse_chunk(const unsigned char *buf, size_t length, struct results *results, unsigned *inout_state)
@@ -626,8 +683,6 @@ void compile_utf8_statemachine(int is_multibyte)
     } else {
         int c;
         setlocale(LC_ALL, "");
-        //fprintf(stderr, "state-machine: ASCII\n");
-        //fprintf(stderr, "0x85 = %s\n", isspace(0x85)?"space":"notspace");
         for (c=0; c<256; c++) {
             if (c == '\n') {
                 table[WASSPACE][c] = NEWLINE;

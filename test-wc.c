@@ -77,35 +77,14 @@ my_spawn(const char *progname, const char *parms)
         return handles;
     }
     
-    /* Save the pipes that we'll use later */
-    //workers->parent_stdout = pipe_stdout[0];
-    //workers->parent_stderr = pipe_stderr[0];
-    //workers->child_stdout = pipe_stdout[1];
-    //workers->child_stderr = pipe_stderr[1];
-    /*handles.child_stdin = fdopen(pipe_stdin[0], "rwb");
-    if (handles.child_stdin == NULL) {
-        fprintf(stderr, "[-] fdopen(stdin): %s\n", strerror(errno));
-        return handles;
-    }
-    handles.child_stdout = fdopen(pipe_stdout[0], "rwb");
-    if (handles.child_stdout == NULL) {
-        fprintf(stderr, "[-] fdopen(stdout): %s\n", strerror(errno));
-        return handles;
-    }
-    handles.child_stderr = fdopen(pipe_stderr[0], "rwb");
-    if (handles.child_stderr == NULL) {
-        fprintf(stderr, "[-] fdopen(stderr): %s\n", strerror(errno));
-        return handles;
-    }*/
-
 
     
     /* Configure the parent end of the pipes be be non-inheritable.
      * In other words, none of the children can read from these
      * pipes, nor will they exist in child process space */
-    //fcntl(pipe_stdout[0], F_SETFD, FD_CLOEXEC);
-    //fcntl(pipe_stderr[0], F_SETFD, FD_CLOEXEC);
-    //fcntl(pipe_stdin[0], F_SETFD, FD_CLOEXEC);
+    /*fcntl(pipe_stdout[0], F_SETFD, FD_CLOEXEC);
+    fcntl(pipe_stderr[0], F_SETFD, FD_CLOEXEC);
+    fcntl(pipe_stdin[0], F_SETFD, FD_CLOEXEC);*/
 
     pid = fork();
     if (pid == -1) {
