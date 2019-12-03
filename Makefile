@@ -31,7 +31,7 @@ ascii.txt: util-genx
 	./util-genx a > ascii.txt
 
 utf8.txt: util-genx
-	./util-genx a > utf8.txt
+	./util-genx --utf8 > utf8.txt
 
 time: pocorgtfo18.pdf wc2a wc2b wc2z util-genx ascii.txt
 	/usr/bin/time wc pocorgtfo18.pdf
