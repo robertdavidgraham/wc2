@@ -36,6 +36,7 @@ utf8.txt: util-genx
 
 bench: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
 	@./bench.sh wc -lwc pocorgtfo18.pdf
+	@./bench.sh wc -lwm pocorgtfo18.pdf
 	@./bench.sh wc -lwc ascii.txt
 	@./bench.sh wc -lwm utf8.txt
 	@./bench.sh ./wc2a -lwc pocorgtfo18.pdf
@@ -47,6 +48,7 @@ bench: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
 
 bench10: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
 	@./bench10.sh wc -lwc pocorgtfo18.pdf
+	@./bench10.sh wc -lwm pocorgtfo18.pdf
 	@./bench10.sh wc -lwc ascii.txt
 	@./bench10.sh wc -lwm utf8.txt
 	@./bench10.sh ./wc2a -lwc pocorgtfo18.pdf
