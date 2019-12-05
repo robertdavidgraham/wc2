@@ -117,6 +117,9 @@ int main(int argc, char *argv[])
         for (i=1; i<argc; i++) {
             FILE *fp;
 
+            if (argv[i][0] == '-')
+                continue;
+
             fp = fopen(argv[i], "rb");
             if (fp == NULL) {
                 perror(argv[i]);

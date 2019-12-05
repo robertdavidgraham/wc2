@@ -1,7 +1,8 @@
+TIMEFORMAT=%U
 
-CFLAGS = -Wall -Wpedantic -Wextra -O2 -ansi
+CFLAGS = -Wall -Wpedantic -Wextra -O2
 
-all: wc2a wc2b wc2c wc2z wc-fast-utf8 test-wc util-genx
+all: wc2a wc2b wc2c wc2z wc2u test-wc util-genx
 
 wc2a: wc2a.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -15,7 +16,7 @@ wc2c: wc2c.c
 wc2z: wc2z.c
 	$(CC) $(CFLAGS) $< -o $@
 
-wc-fast-utf8: wc-fast-utf8.c
+wc2u: wc2u.c
 	$(CC) $(CFLAGS) $< -o $@
 
 test-wc: test-wc.c
@@ -25,7 +26,7 @@ util-genx: util-genx.c
 	$(CC) $(CFLAGS) $< -o $@
 
 pocorgtfo18.pdf:
-	curl https://www.alchemistowl.org/pocorgtfo/pocorgtfo18.pdf -o $@
+	curl -L --retry 20 --retry-delay 2 -O https://github.com/angea/pocorgtfo/raw/master/releases/pocorgtfo18.pdf
 
 ascii.txt: util-genx
 	./util-genx a > ascii.txt
@@ -33,15 +34,34 @@ ascii.txt: util-genx
 utf8.txt: util-genx
 	./util-genx --utf8 > utf8.txt
 
-time: pocorgtfo18.pdf wc2a wc2b wc2z util-genx ascii.txt
-	/usr/bin/time wc pocorgtfo18.pdf
-	/usr/bin/time ./wc2a pocorgtfo18.pdf
-	/usr/bin/time ./wc2b pocorgtfo18.pdf
-	/usr/bin/time ./wc2z pocorgtfo18.pdf
+bench: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
+	@./bench.sh wc -lwc pocorgtfo18.pdf
+	@./bench.sh wc -lwc ascii.txt
+	@./bench.sh wc -lwm utf8.txt
+	@./bench.sh ./wc2a -lwc pocorgtfo18.pdf
+	@./bench.sh ./wc2a -lwc ascii.txt
+	@./bench.sh ./wc2a -lwm utf8.txt
+	@./bench.sh ./wc2u -lwc pocorgtfo18.pdf
+	@./bench.sh ./wc2u -lwc ascii.txt
+	@./bench.sh ./wc2u -lwm utf8.txt
+
+bench10: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
+	@./bench10.sh wc -lwc pocorgtfo18.pdf
+	@./bench10.sh wc -lwc ascii.txt
+	@./bench10.sh wc -lwm utf8.txt
+	@./bench10.sh ./wc2a -lwc pocorgtfo18.pdf
+	@./bench10.sh ./wc2a -lwc ascii.txt
+	@./bench10.sh ./wc2a -lwm utf8.txt
+	@./bench10.sh ./wc2u -lwc pocorgtfo18.pdf
+	@./bench10.sh ./wc2u -lwc ascii.txt
+	@./bench10.sh ./wc2u -lwm utf8.txt
+
 
 test: wc2a
 	@bash selftest
 
 clean:
-	rm -f wc2a wc2b wc2c wc2z wc-fast-utf8 test-wc util-genx
+	rm -f wc2a wc2b wc2c wc2z wc2u test-wc util-genx
 
+cleanall: 
+	rm -f pocorgtfo18.pdf ascii.txt utf8.txt
