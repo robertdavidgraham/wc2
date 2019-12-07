@@ -57,8 +57,8 @@ void parse_chunk(const char * buf, size_t length,
     /* Run the inner loop. This is where 99.9% of the time is spent
      * in this program. */
     for (i = 0; i < length; i++) {
-        char c = buf[i];
-        int is_space = isspace((unsigned char)c);
+        unsigned char c = buf[i];
+        int is_space = isspace(c);
 
         line_count += (c == '\n');
         word_count += (was_space && !is_space);

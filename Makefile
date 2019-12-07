@@ -2,7 +2,7 @@ TIMEFORMAT=%U
 
 CFLAGS = -Wall -Wpedantic -Wextra -O2
 
-all: wc2a wc2b wc2c wc2z wc2u test-wc util-genx
+all: wc2a wc2b wc2c wc2m wc2z wc2u test-wc util-genx
 
 wc2a: wc2a.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -11,6 +11,9 @@ wc2b: wc2b.c
 	$(CC) $(CFLAGS) $< -o $@
 
 wc2c: wc2c.c
+	$(CC) $(CFLAGS) $< -o $@
+
+wc2m: wc2m.c
 	$(CC) $(CFLAGS) $< -o $@
 
 wc2z: wc2z.c
