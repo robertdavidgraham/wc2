@@ -29,6 +29,20 @@ Where:
         the file size if it's a regular file, or the number of bytes
         if a stream like stdin.
 
+    -m
+        Print the number of multibyte characters in the file. A 
+        two-byte sequence will therefore count as one character.
+        This will be equal to or fewer than the number of bytes.
+        This is mutually exclusive with `-c` parameter, only
+        one or the other may be specified.
+
+    If no options are specified, then the default will be
+    "-lwc".
+
+    Normal syntax guidelines are followed. This means the options
+    can be specified separate, as in -l -w -c, or grouped,
+    as in "-lwc".
+
 
     -
 
@@ -121,11 +135,12 @@ which not be either encoded into UTF-8 or decoded from UTF-8. An attempt to
 encode these values in UTF-8 should be rejected.
 
 
-Newline characters
+Unicode Space Characters
 --
 
-As mentioned above, there are numerous newline characters. The list
-is here:
+Here is a list of various space characters, and whether they are recoginized
+as spaces in the *iswspace* function on various platforms, where L=Linux,
+M=macOS, W=Windows10:
 
     L M W 
     x x x    0x0009  ASCII tab '\t'
@@ -137,8 +152,9 @@ is here:
       x x    0x0085  NEXT LINE (NEL)
       x x    0x00a0  NO-BREAK SPACE
     x x x    0x1680  OGHAM SPACE MARK
-    x x x    0x2000  En Quad
-    x x x    0x2001  Em Quad
+    . . .    0x180E  MONGOLIAN VOWEL SEPARATOR
+    x x x    0x2000  En Quad
+    x x x    0x2001  Em Quad
     x x x    0x2002  En Space
     x x x    0x2003  Em Space
     x x x    0x2004  Three-per-Em Space
@@ -148,12 +164,13 @@ is here:
     x x x    0x2008  Punctuation Space
     x x x    0x2009  Thin Space
     x x x    0x200a  Hair Space
-      x x    0x200b  Zero Width Space  
+    . x x    0x200b  Zero Width Space  
     x x x    0x2028  Line Separator
     x x x    0x2029  Paragraph Separator
-      x x    0x202f  NNBSP - Narrow No-Break Space
+    . x x    0x202f  NNBSP - Narrow No-Break Space
     x x x    0x205f  MMSP - Medium Mathematical Space
     x x x    0x3000  Ideographic Space
+    . . .    0xFEFF  ZERO WIDTH NO-BREAK SPACE
 
-
-
+References:
+    http://jkorpela.fi/chars/spaces.html

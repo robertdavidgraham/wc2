@@ -2,7 +2,7 @@ TIMEFORMAT=%U
 
 CFLAGS = -Wall -Wpedantic -Wextra -O2
 
-all: wc2a wc2b wc2c wc2m wc2z wc2u test-wc util-genx
+all: wc2a wc2b wc2c wc2m wc2z wc2u wccmp wctool
 
 wc2a: wc2a.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -22,22 +22,22 @@ wc2z: wc2z.c
 wc2u: wc2u.c
 	$(CC) $(CFLAGS) $< -o $@
 
-test-wc: test-wc.c
+wccmp: wccmp.c
 	$(CC) $(CFLAGS) $< -o $@
 
-util-genx: util-genx.c
+wctool: wctool.c
 	$(CC) $(CFLAGS) $< -o $@
 
 pocorgtfo18.pdf:
 	curl -L --retry 20 --retry-delay 2 -O https://github.com/angea/pocorgtfo/raw/master/releases/pocorgtfo18.pdf
 
-ascii.txt: util-genx
-	./util-genx a > ascii.txt
+ascii.txt: wctool
+	./wctool a > ascii.txt
 
-utf8.txt: util-genx
-	./util-genx --utf8 > utf8.txt
+utf8.txt: wctool
+	./wctool --utf8 > utf8.txt
 
-bench: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
+bench: pocorgtfo18.pdf wc2a wc2u ascii.txt utf8.txt
 	@./bench.sh wc -lwc pocorgtfo18.pdf
 	@./bench.sh wc -lwm pocorgtfo18.pdf
 	@./bench.sh wc -lwc ascii.txt
@@ -49,7 +49,7 @@ bench: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
 	@./bench.sh ./wc2u -lwc ascii.txt
 	@./bench.sh ./wc2u -lwm utf8.txt
 
-bench10: pocorgtfo18.pdf wc2a wc2u util-genx ascii.txt utf8.txt
+bench10: pocorgtfo18.pdf wc2a wc2u ascii.txt utf8.txt
 	@./bench10.sh wc -lwc pocorgtfo18.pdf
 	@./bench10.sh wc -lwm pocorgtfo18.pdf
 	@./bench10.sh wc -lwc ascii.txt
@@ -66,7 +66,7 @@ test: wc2a
 	@bash selftest
 
 clean:
-	rm -f wc2a wc2b wc2c wc2z wc2u test-wc util-genx
+	rm -f wc2a wc2b wc2c wc2z wc2u wccmp wctool
 
 cleanall: 
 	rm -f pocorgtfo18.pdf ascii.txt utf8.txt

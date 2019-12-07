@@ -61,7 +61,7 @@ void parse_chunk(const char * buf, size_t length,
         int is_space = isspace(c);
 
         line_count += (c == '\n');
-        word_count += (was_space && !is_space);
+        word_count += (was_space & !is_space);
 
         was_space = is_space;
     }

@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <string.h>
 
+enum {FILESIZE=92296537};
+
 unsigned 
 utf8_to_ucs4(unsigned char *buf, size_t sizeof_buf)
 {
@@ -92,10 +94,39 @@ void gen_utf8(void)
 
         
     fprintf(stderr, "[+] generating utf8 file\n");
-    for (i=0; i<92296537; ) {
+    for (i=0; i<FILESIZE; ) {
         const char *out = list[r_rand(&seed)%16];
         printf("%s", out);
         i += strlen(out);
+    }
+}
+
+void gen_allword(void)
+{
+    size_t i;
+    char buf[1024];
+    memset(buf, 'x', sizeof(buf));
+    
+    fprintf(stderr, "[+] generating all-word file\n");
+    for (i=0; i<FILESIZE-1024; i += sizeof(buf)) {
+        fwrite(buf, 1, sizeof(buf), stdout);
+    }
+    for (; i<FILESIZE; i++) {
+        putchar('x');
+    }
+}
+void gen_allspace(void)
+{
+    size_t i;
+    char buf[1024];
+    memset(buf, ' ', sizeof(buf));
+    
+    fprintf(stderr, "[+] generating all-space file\n");
+    for (i=0; i<FILESIZE-1024; i += sizeof(buf)) {
+        fwrite(buf, 1, sizeof(buf), stdout);
+    }
+    for (; i<FILESIZE; i++) {
+        putchar(' ');
     }
 }
 
@@ -105,7 +136,7 @@ void gen_ascii(void)
     unsigned seed = 0;
 
     fprintf(stderr, "[+] generating ascii file\n");
-    for (i=0; i<92296537; i++) {
+    for (i=0; i<FILESIZE; i++) {
         putchar(" x\ty\rz\na"[r_rand(&seed)%8]);
     }
 }
@@ -114,6 +145,10 @@ int main(int argc, char *argv[])
 {
     if (argc > 1 && (tolower(argv[1][0]) == 'u' || strcmp(argv[1], "-u") == 0 || strcmp(argv[1], "--utf8") == 0))
         gen_utf8();
+    else if (argc > 1 && (tolower(argv[1][0]) == 'w' || strcmp(argv[1], "-w") == 0 || strcmp(argv[1], "--allword") == 0))
+        gen_allword();
+    else if (argc > 1 && (tolower(argv[1][0]) == 's' || strcmp(argv[1], "-s") == 0 || strcmp(argv[1], "--allspace") == 0))
+        gen_allspace();
     else
         gen_ascii();
 

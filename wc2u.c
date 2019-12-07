@@ -520,7 +520,8 @@ parse_chunk(const unsigned char *buf, size_t length, struct results *results, un
     unsigned state = *inout_state;
     size_t i;
     unsigned long counts[STATE_MAX];
-    
+    unsigned char c;
+
     /* We only care about the first four states, so these will be initialized to zero.
      * Since we don't use the other ~100 counts for the other states, we won't initialize them */
     counts[NEWLINE] = 0;
@@ -530,8 +531,8 @@ parse_chunk(const unsigned char *buf, size_t length, struct results *results, un
 
     /* This is the inner-loop where 99.9% of the execution time of this program will
      * be spent. */
-    for (i=0; i<length; i += 1) {
-        unsigned char c = buf[i];
+    for (i=0; i<length; i++) {
+        c = buf[i];
         state = table[state][c];
         counts[state]++;
     }
