@@ -4,40 +4,38 @@ const NEW_LINE = 1;
 const NEW_WORD = 2;
 const WAS_WORD = 3;
 
-var tablex = new Array(4);
+var tablex;
 
 function tablex_init()
 {
     var i;
     var spaces = [9,10,11,12,13,32];
 
-    tablex[WAS_SPACE] = Buffer.alloc(256);
-    tablex[NEW_LINE] = Buffer.alloc(256);
-    tablex[NEW_WORD] = Buffer.alloc(256);
-    tablex[WAS_WORD] = Buffer.alloc(256);
-
+    tablex = Buffer.alloc(4 * 256);
+    
     /* Transitions when not a space */
     for (i=0; i<256; i++) {
-        tablex[WAS_SPACE][i] = NEW_WORD;
-        tablex[NEW_LINE][i] = NEW_WORD;
-        tablex[NEW_WORD][i] = WAS_WORD;
-        tablex[WAS_WORD][i] = WAS_WORD;
+        var c = i;
+        tablex[WAS_SPACE* 256 + c] = NEW_WORD;
+        tablex[NEW_LINE * 256 + c] = NEW_WORD;
+        tablex[NEW_WORD * 256 + c] = WAS_WORD;
+        tablex[WAS_WORD * 256 + c] = WAS_WORD;
     }
 
     /* Transitions when space */
     for (i in spaces) {
         var c = spaces[i];
-        tablex[WAS_SPACE][c] = WAS_SPACE;
-        tablex[NEW_LINE][c] = WAS_SPACE;
-        tablex[NEW_WORD][c] = WAS_SPACE;
-        tablex[WAS_WORD][c] = WAS_SPACE;
+        tablex[WAS_SPACE* 256 + c] = WAS_SPACE;
+        tablex[NEW_LINE * 256 + c] = WAS_SPACE;
+        tablex[NEW_WORD * 256 + c] = WAS_SPACE;
+        tablex[WAS_WORD * 256 + c] = WAS_SPACE;
     }
 
     /* Transitions when newline \n */
-    tablex[WAS_SPACE][10] = NEW_LINE;
-    tablex[NEW_LINE][10] = NEW_LINE;
-    tablex[NEW_WORD][10] = NEW_LINE;
-    tablex[WAS_WORD][10] = NEW_LINE;
+    tablex[WAS_SPACE* 256 + 10] = NEW_LINE;
+    tablex[NEW_LINE * 256 + 10] = NEW_LINE;
+    tablex[NEW_WORD * 256 + 10] = NEW_LINE;
+    tablex[WAS_WORD * 256 + 10] = NEW_LINE;
 
 }
 tablex_init();
@@ -74,7 +72,7 @@ function parse_chunk(buf, length, results)
 
     for (i=0; i<length; i++) {
         c = buf[i];
-        state = tablex[state][c];
+        state = tablex[state  * 256 + c];
         counts[state]++;
     }
 
