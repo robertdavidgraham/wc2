@@ -4,41 +4,41 @@ const NEW_LINE = 1;
 const NEW_WORD = 2;
 const WAS_WORD = 3;
 
-var tablex;
+var table;
 
-function tablex_init()
+function table_init()
 {
     var i;
     var spaces = [9,10,11,12,13,32];
 
-    tablex = Buffer.alloc(4 * 256);
+    table = Buffer.alloc(4 * 256);
     
     /* Transitions when not a space */
     for (i=0; i<256; i++) {
         var c = i;
-        tablex[WAS_SPACE* 256 + c] = NEW_WORD;
-        tablex[NEW_LINE * 256 + c] = NEW_WORD;
-        tablex[NEW_WORD * 256 + c] = WAS_WORD;
-        tablex[WAS_WORD * 256 + c] = WAS_WORD;
+        table[WAS_SPACE* 256 + c] = NEW_WORD;
+        table[NEW_LINE * 256 + c] = NEW_WORD;
+        table[NEW_WORD * 256 + c] = WAS_WORD;
+        table[WAS_WORD * 256 + c] = WAS_WORD;
     }
 
     /* Transitions when space */
     for (i in spaces) {
         var c = spaces[i];
-        tablex[WAS_SPACE* 256 + c] = WAS_SPACE;
-        tablex[NEW_LINE * 256 + c] = WAS_SPACE;
-        tablex[NEW_WORD * 256 + c] = WAS_SPACE;
-        tablex[WAS_WORD * 256 + c] = WAS_SPACE;
+        table[WAS_SPACE* 256 + c] = WAS_SPACE;
+        table[NEW_LINE * 256 + c] = WAS_SPACE;
+        table[NEW_WORD * 256 + c] = WAS_SPACE;
+        table[WAS_WORD * 256 + c] = WAS_SPACE;
     }
 
     /* Transitions when newline \n */
-    tablex[WAS_SPACE* 256 + 10] = NEW_LINE;
-    tablex[NEW_LINE * 256 + 10] = NEW_LINE;
-    tablex[NEW_WORD * 256 + 10] = NEW_LINE;
-    tablex[WAS_WORD * 256 + 10] = NEW_LINE;
+    table[WAS_SPACE* 256 + 10] = NEW_LINE;
+    table[NEW_LINE * 256 + 10] = NEW_LINE;
+    table[NEW_WORD * 256 + 10] = NEW_LINE;
+    table[WAS_WORD * 256 + 10] = NEW_LINE;
 
 }
-tablex_init();
+table_init();
 
 
 
@@ -63,16 +63,13 @@ function Results()
 function parse_chunk(buf, length, results)
 {
     var state = results.state;
-    var line_count = 0;
-    var word_count = 0;
     var c;
-    var is_space;
     var i;
     var counts = [0,0,0,0];
 
     for (i=0; i<length; i++) {
         c = buf[i];
-        state = tablex[state  * 256 + c];
+        state = table[state  * 256 + c];
         counts[state]++;
     }
 

@@ -149,8 +149,8 @@ M=macOS, W=Windows10:
     x x x    0x000c  ASCII form-feed '\f'
     x x x    0x000d  ASCII carriage return '\r'
     x x x    0x0020  ASCII space ' ' '\b'
-      x x    0x0085  NEXT LINE (NEL)
-      x x    0x00a0  NO-BREAK SPACE
+    . x x    0x0085  NEXT LINE (NEL)
+    . x x    0x00a0  NO-BREAK SPACE
     x x x    0x1680  OGHAM SPACE MARK
     . . .    0x180E  MONGOLIAN VOWEL SEPARATOR
     x x x    0x2000  En Quad
