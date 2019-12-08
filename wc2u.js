@@ -1,46 +1,84 @@
 var fs = require("fs");
+const WAS_SPACE = 0;
+const NEW_LINE = 1;
+const NEW_WORD = 2;
+const WAS_WORD = 3;
 
-var table = new Array();
+var tablex = new Array(4);
+
+function tablex_init()
+{
+    var i;
+    var spaces = [9,10,11,12,13,32];
+
+    tablex[WAS_SPACE] = Buffer.alloc(256);
+    tablex[NEW_LINE] = Buffer.alloc(256);
+    tablex[NEW_WORD] = Buffer.alloc(256);
+    tablex[WAS_WORD] = Buffer.alloc(256);
+
+    /* Transitions when not a space */
+    for (i=0; i<256; i++) {
+        tablex[WAS_SPACE][i] = NEW_WORD;
+        tablex[NEW_LINE][i] = NEW_WORD;
+        tablex[NEW_WORD][i] = WAS_WORD;
+        tablex[WAS_WORD][i] = WAS_WORD;
+    }
+
+    /* Transitions when space */
+    for (i in spaces) {
+        var c = spaces[i];
+        tablex[WAS_SPACE][c] = WAS_SPACE;
+        tablex[NEW_LINE][c] = WAS_SPACE;
+        tablex[NEW_WORD][c] = WAS_SPACE;
+        tablex[WAS_WORD][c] = WAS_SPACE;
+    }
+
+    /* Transitions when newline \n */
+    tablex[WAS_SPACE][10] = NEW_LINE;
+    tablex[NEW_LINE][10] = NEW_LINE;
+    tablex[NEW_WORD][10] = NEW_LINE;
+    tablex[WAS_WORD][10] = NEW_LINE;
+
+}
+tablex_init();
+
+
 
 function Results()
 {
     this.line_count = 0;
     this.word_count = 0;
     this.char_count = 0;
-    this.was_space = true;
-    this.update = function (line_count, word_count, char_count, was_space) {
+    this.state = WAS_SPACE;
+    this.update = function (line_count, word_count, char_count, state) {
         this.line_count += line_count;
         this.word_count += word_count;
         this.char_count += char_count;
-        this.was_space = was_space;
+        this.state = state;
         return this;
     }
     this.update2 = function (s) {
-        return this.update(s.line_count, s.word_count, s.char_count, s.was_space);
+        return this.update(s.line_count, s.word_count, s.char_count, s.state);
     }
 }
-function isspace(c) {
-    return (9 <= c && c <= 13) || (c == 32);
-}
 
-function parse_chunk(buf, length, state)
+function parse_chunk(buf, length, results)
 {
-    var was_space = state.was_space;
+    var state = results.state;
     var line_count = 0;
     var word_count = 0;
     var c;
     var is_space;
     var i;
+    var counts = [0,0,0,0];
 
     for (i=0; i<length; i++) {
         c = buf[i];
-        is_space = table[c];
-        line_count += (c == 10) ? 1 : 0;
-        word_count += (!is_space && was_space) ? 1 : 0;
-        was_space = is_space;
+        state = tablex[state][c];
+        counts[state]++;
     }
 
-    return state.update(line_count, word_count, length, was_space);
+    return results.update(counts[NEW_LINE], counts[NEW_WORD], length, state);
 }
 
 function print_results(results, cfg, filename)
@@ -59,18 +97,18 @@ function print_results(results, cfg, filename)
 
 function parse_file(fd, filename, cfg)
 {
-    var state = new Results();
+    var results = new Results();
     var buf = Buffer.alloc(65536);
 
     for (;;) {
         var length = fs.readSync(fd, buf, 0, 65536);
         if (length == 0)
             break;
-        state = parse_chunk(buf, length, state);
+        results = parse_chunk(buf, length, results);
     }
     
-    print_results(state, cfg, filename);
-    return state;
+    print_results(results, cfg, filename);
+    return results;
 }
 
 
@@ -80,17 +118,10 @@ function print_help()
     process.exit(1);
 }
 
-function main(argv)
+function parse_configuration(argv)
 {
-    var file_count = 0;
-    var total = new Results();
     var cfg = {is_line_count:false, is_word_count:false, is_char_count:false};
-
-    /* setup character table to determine spaces */
-    for (var i=0; i<256; i++)
-        table[i] = isspace(i);
-
-    /* Parse configuration */
+    
     for (var i in argv) {
         if (argv[i].charAt(0) == '-') {
             for (var j=1; j<argv[i].length; j++) {
@@ -120,6 +151,19 @@ function main(argv)
     if (cfg.is_line_count == false && cfg.is_word_count == false && cfg.is_char_count == false)
         cfg = {is_line_count: true, is_word_count: true, is_char_count: true};
 
+    return cfg;
+}
+
+function main(argv)
+{
+    var file_count = 0;
+    var total = new Results();
+    
+
+    /* Parse configuration */
+    var cfg = parse_configuration(argv);
+
+    /* Parse all the files */
     for (var i in argv) {
         var filename = argv[i];
         if (i < 2)
@@ -134,7 +178,11 @@ function main(argv)
             fs.closeSync(fd);
             file_count++;
         } catch (err) {
-            console.log(err);
+            if (err.syscall == 'open' && err.code == 'ENOENT') {
+                console.log("[-] " + err.path + ": No such file or directory");
+            } else 
+                console.log(err);
+            process.exit(1);
             break;
         }
     }
