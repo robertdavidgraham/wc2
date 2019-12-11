@@ -8,6 +8,7 @@
 #include <string.h>
 #include <wchar.h>
 #include <locale.h>
+#include <wctype.h>
 
 /* Set this to larger size for slightly faster performance,
  * and samller size (like 1) to verify accuracy */

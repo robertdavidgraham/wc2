@@ -200,6 +200,50 @@ r_rand(unsigned *seed)
     return (*seed)>>16 & 0x7fff;
 }
 
+static size_t
+cleanup_children(void)
+{
+    size_t children_count = 0;
+
+    for (;;) {
+        int pid;
+        
+        /* Reap children.
+         * The first parameter is set to -1 to indicate that we want
+         * information about ANY of our children processes.
+         * The second paremeter is set to NULL to indicate that we
+         * aren't interested in knowing the status/result code from
+         * the process.
+         * The third parameter is WNOHHANG, meaning that we want to return
+         * immediately
+         */
+        pid = waitpid(-1, 0, WNOHANG);
+        
+        if (pid > 0) {
+            /* If we get back a valid PID, that means the child process
+             * has terminated. We want to decrement our count by one
+             * then loop around looking for more child processes. */
+            children_count++;
+            //fprintf(stderr, "[ ] children left = %u\n", (unsigned)*children_count);
+            continue;
+        } else if (pid == 0) {
+            /* if none of our children are currently exited, then this
+             * value of zero is returned. */
+            break;
+        } else if (pid == -1 && errno == ECHILD) {
+            /* In this condition, there are no child processes. In this
+             * case, we just want to handle this the same as pid=0 */
+            //fprintf(stderr, "[ ] no children left\n");
+            break;
+        } else if (pid < 0) {
+            /* Some extraordinary error occured */
+            //fprintf(stderr, "[-] waitpid() %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+    return 0;
+}
+
 long
 word_count(const char *progname, const char *parms, const unsigned char *buf, size_t length)
 {
@@ -234,13 +278,35 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
     
     close(h.child_stdout);
     close(h.child_stderr);
-    wait(NULL);
+    cleanup_children();
 
     printf("%ld %ld %ld\n", results.line_count, results.word_count, results.char_count);
 
     return results.word_count;
 }
 
+
+unsigned 
+utf8_len(unsigned char c)
+{
+    if (c < 0x80) {
+        return 1;
+    } else if ((c&0xE0) == 0xC0) {
+        return  2;
+    } else if ((c&0xF0) == 0xE0) {
+        return 3;
+    } else if ((c&0xF1) == 0xF0) {
+        return 4;
+    } else
+        return 0;
+}
+void print_diff(const unsigned char *buf, size_t offset, size_t max)
+{
+    size_t i;
+    for (i=offset; i<max; i++) {
+        printf("0x%02x - len(%u)\n", buf[i], utf8_len(buf[i]));
+    }
+}
 int main(int argc, char *argv[])
 {
     unsigned char *buf;
@@ -289,7 +355,7 @@ int main(int argc, char *argv[])
     max = length;
     while (min < max) {
         unsigned half = (max - min)/2 + min;
-        fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max);
+        fprintf(stderr, "%8lu\b\b\b\b\b\b\b\b", (unsigned long)(length - min));
         x = word_count("wc", parms, buf, half);
         y = word_count(progname, parms, buf, half);
         if (x == y) {
@@ -307,7 +373,8 @@ int main(int argc, char *argv[])
     max = max_diff;
     while (min < max) {
         unsigned half = (max - min)/2 + min;
-        fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max);
+        fprintf(stderr, "%8lu\b\b\b\b\b\b\b\b", (unsigned long)(max_diff - min));
+        //fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max);
         x = word_count("wc", parms, buf + half, max_diff - half);
         y = word_count("progname", parms, buf + half, max_diff - half);
         if (x == y) {
@@ -324,6 +391,7 @@ int main(int argc, char *argv[])
     x = word_count("wc", parms, buf + min_diff, max_diff - min_diff);
     y = word_count(progname, parms, buf + min_diff, max_diff - min_diff);
     printf("Diff string: wc=%ld wc2=%ld \n", x, y);
+    //print_diff(buf, min_diff, max_diff);
     for (i=min_diff; i<max_diff; i++) {
         printf("0x%02x ", buf[i]);
     }

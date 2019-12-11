@@ -2,7 +2,7 @@ TIMEFORMAT=%U
 
 CFLAGS = -Wall -Wpedantic -Wextra -O2
 
-all: wc2a wc2b wc2c wc2m wc2z wc2u wccmp wctool
+all: wc2a wc2b wc2c wc2m wc2z wc2u wcdiff wctool
 
 wc2a: wc2a.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -22,7 +22,7 @@ wc2z: wc2z.c
 wc2u: wc2u.c
 	$(CC) $(CFLAGS) $< -o $@
 
-wccmp: wccmp.c
+wcdiff: wcdiff.c
 	$(CC) $(CFLAGS) $< -o $@
 
 wctool: wctool.c
@@ -66,7 +66,7 @@ test: wc2a
 	@bash selftest
 
 clean:
-	rm -f wc2a wc2b wc2c wc2z wc2u wccmp wctool
+	rm -f wc2a wc2b wc2c wc2z wc2u wcdiff wctool
 
 cleanall: 
 	rm -f pocorgtfo18.pdf ascii.txt utf8.txt
