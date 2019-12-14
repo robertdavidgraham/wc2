@@ -518,7 +518,7 @@ static void
 parse_chunk(const unsigned char *buf, size_t length, struct results *results, unsigned *inout_state)
 {
     unsigned state = *inout_state;
-    const unsigned char *end = buf + length;
+    size_t i;
     unsigned long counts[STATE_MAX];
     unsigned char c;
 
@@ -531,8 +531,8 @@ parse_chunk(const unsigned char *buf, size_t length, struct results *results, un
 
     /* This is the inner-loop where 99.9% of the execution time of this program will
      * be spent. */
-    while (buf < end) {
-        c = *buf++;
+    for (i=0; i<length; i++) {
+        c = buf[i];
         state = table[state][c];
         counts[state]++;
     }
