@@ -50,36 +50,36 @@ struct results {
 |   4   |   21 | U+10000 | U+10FFFF | 11110xxx | 10xxxxxx | 10xxxxxx | 10xxxxxx |
  */
 enum {  
-    U2_xx,
-    U2_C2,
-    U3_E0,
-    U3_E1,
-    U3_E2,
-    U3_E3,
-    U3_Ed,
-    U3_Ee,
-    U3_Ex,
-    U3_E0_xx,
-    U3_E1_xx,
-    U3_E1_9a,
-    U3_E2_80,
-    U3_E2_81,
-    U3_E2_xx,
-    U3_E3_80,
-    U3_E3_81,
-    U3_E3_xx,
-    U3_Ed_xx,
-    U3_Ee_xx,
-    U3_Ex_xx,
-    U4_xx,
-    U4_F0,
-    U4_F4,
-    U4_xx_xx,
-    U4_F0_xx,
-    U4_F4_xx,
-    U4_xx_xx_xx,
-    U4_F0_xx_xx,
-    U4_F4_xx_xx,
+    DUO2_xx,
+    DUO2_C2,
+    TRI2_E0,
+    TRI2_E1,
+    TRI2_E2,
+    TRI2_E3,
+    TRI2_ED,
+    TRI2_EE,
+    TRI2_xx,
+    TRI3_E0_xx,
+    TRI3_E1_xx,
+    TRI3_E1_9a,
+    TRI3_E2_80,
+    TRI3_E2_81,
+    TRI3_E2_xx,
+    TRI3_E3_80,
+    TRI3_E3_81,
+    TRI3_E3_xx,
+    TRI3_Ed_xx,
+    TRI3_Ee_xx,
+    TRI3_xx_xx,
+    QUAD2_xx,
+    QUAD2_F0,
+    QUAD2_F4,
+    QUAD3_xx_xx,
+    QUAD3_F0_xx,
+    QUAD3_F4_xx,
+    QUAD4_xx_xx_xx,
+    QUAD4_F0_xx_xx,
+    QUAD4_F4_xx_xx,
     ILLEGAL
 };
 
@@ -105,56 +105,56 @@ const char *name(unsigned state)
         case NEWLINE: return "(NEWLINE)";
         case NEWWORD: return "-NEWWORD-";
         case WASWORD: return "-WASWORD-";
-        case USPACE+U2_xx: return "(U2_xx)";
-        case USPACE+U2_C2: return "(U2_C2)";
-        case USPACE+U3_E0: return "(U3_E0)";
-        case USPACE+U3_E1: return "(U3_E1)";
-        case USPACE+U3_E2: return "(U3_E2)";
-        case USPACE+U3_E3: return "(U3_E3)";
-        case USPACE+U3_Ed: return "(U3_Ee)";
-        case USPACE+U3_Ee: return "(U3_Ee)";
-        case USPACE+U3_Ex: return "(U3_Ex)";
-        case USPACE+U3_E0_xx: return "(U3_E0_xx)";
-        case USPACE+U3_E1_xx: return "(U3_E1_xx)";
-        case USPACE+U3_E1_9a: return "(U3_E1_9a)";
-        case USPACE+U3_E2_80: return "(U3_E2_80)";
-        case USPACE+U3_E2_81: return "(U3_E2_81)";
-        case USPACE+U3_E2_xx: return "(U3_E2_xx)";
-        case USPACE+U3_E3_80: return "(U3_E3_80)";
-        case USPACE+U3_E3_81: return "(U3_E3_81)";
-        case USPACE+U3_E3_xx: return "(U3_E3_xx)";
-        case USPACE+U3_Ed_xx: return "(U3_Ed_xx)";
-        case USPACE+U3_Ee_xx: return "(U3_Ee_xx)";
-        case USPACE+U3_Ex_xx: return "(U3_Ex_xx)";
-        case USPACE+U4_xx: return "(U4_xx)";
-        case USPACE+U4_xx_xx: return "(U4_xx_xx)";
-        case USPACE+U4_xx_xx_xx: return "(U4_xx_xx_xx)";
+        case USPACE+DUO2_xx: return "(DUO2_xx)";
+        case USPACE+DUO2_C2: return "(DUO2_C2)";
+        case USPACE+TRI2_E0: return "(TRI2_E0)";
+        case USPACE+TRI2_E1: return "(TRI2_E1)";
+        case USPACE+TRI2_E2: return "(TRI2_E2)";
+        case USPACE+TRI2_E3: return "(TRI2_E3)";
+        case USPACE+TRI2_ED: return "(TRI2_EE)";
+        case USPACE+TRI2_EE: return "(TRI2_EE)";
+        case USPACE+TRI2_xx: return "(TRI2_xx)";
+        case USPACE+TRI3_E0_xx: return "(TRI3_E0_xx)";
+        case USPACE+TRI3_E1_xx: return "(TRI3_E1_xx)";
+        case USPACE+TRI3_E1_9a: return "(TRI3_E1_9a)";
+        case USPACE+TRI3_E2_80: return "(TRI3_E2_80)";
+        case USPACE+TRI3_E2_81: return "(TRI3_E2_81)";
+        case USPACE+TRI3_E2_xx: return "(TRI3_E2_xx)";
+        case USPACE+TRI3_E3_80: return "(TRI3_E3_80)";
+        case USPACE+TRI3_E3_81: return "(TRI3_E3_81)";
+        case USPACE+TRI3_E3_xx: return "(TRI3_E3_xx)";
+        case USPACE+TRI3_Ed_xx: return "(TRI3_Ed_xx)";
+        case USPACE+TRI3_Ee_xx: return "(TRI3_Ee_xx)";
+        case USPACE+TRI3_xx_xx: return "(TRI3_xx_xx)";
+        case USPACE+QUAD2_xx: return "(QUAD2_xx)";
+        case USPACE+QUAD3_xx_xx: return "(QUAD3_xx_xx)";
+        case USPACE+QUAD4_xx_xx_xx: return "(QUAD4_xx_xx_xx)";
         case USPACE+ILLEGAL: return "(ILLEGAL)";
         
-        case UWORD+U2_xx: return "-U2_xx-";
-        case UWORD+U2_C2: return "-U2_C2-";
-        case UWORD+U3_E0: return "-U3_E0-";
-        case UWORD+U3_E1: return "-U3_E1-";
-        case UWORD+U3_E2: return "-U3_E2-";
-        case UWORD+U3_E3: return "-U3_E3-";
-        case UWORD+U3_Ed: return "-U3_Ed-";
-        case UWORD+U3_Ee: return "-U3_Ee-";
-        case UWORD+U3_Ex: return "-U3_Ex-";
-        case UWORD+U3_E0_xx: return "-U3_E0_xx-";
-        case UWORD+U3_E1_xx: return "-U3_E1_xx-";
-        case UWORD+U3_E1_9a: return "-U3_E1_9a-";
-        case UWORD+U3_E2_80: return "-U3_E2_80-";
-        case UWORD+U3_E2_81: return "-U3_E2_81-";
-        case UWORD+U3_E2_xx: return "-U3_E2_xx-";
-        case UWORD+U3_E3_80: return "-U3_E3_80-";
-        case UWORD+U3_E3_81: return "-U3_E3_81-";
-        case UWORD+U3_E3_xx: return "-U3_E3_xx-";
-        case UWORD+U3_Ed_xx: return "-U3_Ed_xx-";
-        case UWORD+U3_Ee_xx: return "-U3_Ee_xx-";
-        case UWORD+U3_Ex_xx: return "-U3_E0_xx-";
-        case UWORD+U4_xx: return "-U4_xx-";
-        case UWORD+U4_xx_xx: return "-U4_xx_xx-";
-        case UWORD+U4_xx_xx_xx: return "-U4_xx_xx_xx-";
+        case UWORD+DUO2_xx: return "-DUO2_xx-";
+        case UWORD+DUO2_C2: return "-DUO2_C2-";
+        case UWORD+TRI2_E0: return "-TRI2_E0-";
+        case UWORD+TRI2_E1: return "-TRI2_E1-";
+        case UWORD+TRI2_E2: return "-TRI2_E2-";
+        case UWORD+TRI2_E3: return "-TRI2_E3-";
+        case UWORD+TRI2_ED: return "-TRI2_ED-";
+        case UWORD+TRI2_EE: return "-TRI2_EE-";
+        case UWORD+TRI2_xx: return "-TRI2_xx-";
+        case UWORD+TRI3_E0_xx: return "-TRI3_E0_xx-";
+        case UWORD+TRI3_E1_xx: return "-TRI3_E1_xx-";
+        case UWORD+TRI3_E1_9a: return "-TRI3_E1_9a-";
+        case UWORD+TRI3_E2_80: return "-TRI3_E2_80-";
+        case UWORD+TRI3_E2_81: return "-TRI3_E2_81-";
+        case UWORD+TRI3_E2_xx: return "-TRI3_E2_xx-";
+        case UWORD+TRI3_E3_80: return "-TRI3_E3_80-";
+        case UWORD+TRI3_E3_81: return "-TRI3_E3_81-";
+        case UWORD+TRI3_E3_xx: return "-TRI3_E3_xx-";
+        case UWORD+TRI3_Ed_xx: return "-TRI3_Ed_xx-";
+        case UWORD+TRI3_Ee_xx: return "-TRI3_Ee_xx-";
+        case UWORD+TRI3_xx_xx: return "-TRI3_E0_xx-";
+        case UWORD+QUAD2_xx: return "-QUAD2_xx-";
+        case UWORD+QUAD3_xx_xx: return "-QUAD3_xx_xx-";
+        case UWORD+QUAD4_xx_xx_xx: return "-QUAD4_xx_xx_xx-";
         case UWORD+ILLEGAL: return "-ILLEGAL-";
         
         default:
@@ -177,43 +177,43 @@ void build_basic(unsigned char *row, unsigned char default_state, unsigned char 
                 if (c < 0xC2)
                     row[c] = ubase + ILLEGAL;
                 else if (c == 0xC2)
-                    row[c] = ubase + U2_C2;
+                    row[c] = ubase + DUO2_C2;
                 else
-                    row[c] = ubase + U2_xx;
+                    row[c] = ubase + DUO2_xx;
             } else if ((c & 0xF0) == 0xE0) {
                 /* 1110 xxxx - unicode 3 byte sequence */
                 switch (c) {
                     case 0xE0:
-                        row[c] = ubase + U3_E0;
+                        row[c] = ubase + TRI2_E0;
                         break;
                     case 0xE1:
-                        row[c] = ubase + U3_E1;
+                        row[c] = ubase + TRI2_E1;
                         break;
                     case 0xE2:
-                        row[c] = ubase + U3_E2;
+                        row[c] = ubase + TRI2_E2;
                         break;
                     case 0xE3:
-                        row[c] = ubase + U3_E3;
+                        row[c] = ubase + TRI2_E3;
                         break;
                     case 0xEd:
-                        row[c] = ubase + U3_Ed;
+                        row[c] = ubase + TRI2_ED;
                         break;
                     case 0xEe:
-                        row[c] = ubase + U3_Ee;
+                        row[c] = ubase + TRI2_EE;
                         break;
                     default:
-                        row[c] = ubase + U3_Ex;
+                        row[c] = ubase + TRI2_xx;
                         break;
                 }
             } else if ((c & 0xF8) == 0xF0) {
                 if (c >= 0xF5)
                     row[c] = ubase + ILLEGAL;
                 else if (c == 0xF0)
-                    row[c] = ubase + U4_F0;
+                    row[c] = ubase + QUAD2_F0;
                 else if (c == 0xF4)
-                    row[c] = ubase + U4_F4;
+                    row[c] = ubase + QUAD2_F4;
                 else
-                    row[c] = ubase + U4_xx;
+                    row[c] = ubase + QUAD2_xx;
             } else
                 row[c] = ubase + ILLEGAL;
         } else if (c == '\n')
@@ -356,78 +356,78 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     /*
      * Two byte
      */
-    build_urow(ubase, U2_xx, 0);
-    build_urow(ubase, U2_C2, 0);
+    build_urow(ubase, DUO2_xx, 0);
+    build_urow(ubase, DUO2_C2, 0);
  
     /*
      * Three byte
      */
-    build_urow(ubase, U3_E0, U3_E0_xx);
-    build_urow(ubase, U3_E1, U3_E1_xx);
-    build_urow(ubase, U3_E2, U3_E2_xx);
-    build_urow(ubase, U3_E3, U3_E3_xx);
-    build_urow(ubase, U3_Ed, U3_Ed_xx);
-    build_urow(ubase, U3_Ee, U3_Ee_xx);
-    build_urow(ubase, U3_Ex, U3_Ex_xx);
+    build_urow(ubase, TRI2_E0, TRI3_E0_xx);
+    build_urow(ubase, TRI2_E1, TRI3_E1_xx);
+    build_urow(ubase, TRI2_E2, TRI3_E2_xx);
+    build_urow(ubase, TRI2_E3, TRI3_E3_xx);
+    build_urow(ubase, TRI2_ED, TRI3_Ed_xx);
+    build_urow(ubase, TRI2_EE, TRI3_Ee_xx);
+    build_urow(ubase, TRI2_xx, TRI3_xx_xx);
     
-    build_urow(ubase, U3_E0_xx, 0);
-    build_urow(ubase, U3_E1_xx, 0);
-    build_urow(ubase, U3_E1_9a, 0);
-    build_urow(ubase, U3_E2_80, 0);
-    build_urow(ubase, U3_E2_81, 0);
-    build_urow(ubase, U3_E2_xx, 0);
-    build_urow(ubase, U3_E3_80, 0);
-    build_urow(ubase, U3_E3_81, 0);
-    build_urow(ubase, U3_E3_xx, 0);
-    build_urow(ubase, U3_Ed_xx, 0);
-    build_urow(ubase, U3_Ee_xx, 0);
-    build_urow(ubase, U3_Ex_xx, 0);
+    build_urow(ubase, TRI3_E0_xx, 0);
+    build_urow(ubase, TRI3_E1_xx, 0);
+    build_urow(ubase, TRI3_E1_9a, 0);
+    build_urow(ubase, TRI3_E2_80, 0);
+    build_urow(ubase, TRI3_E2_81, 0);
+    build_urow(ubase, TRI3_E2_xx, 0);
+    build_urow(ubase, TRI3_E3_80, 0);
+    build_urow(ubase, TRI3_E3_81, 0);
+    build_urow(ubase, TRI3_E3_xx, 0);
+    build_urow(ubase, TRI3_Ed_xx, 0);
+    build_urow(ubase, TRI3_Ee_xx, 0);
+    build_urow(ubase, TRI3_xx_xx, 0);
 
-    table[ubase + U3_E1][0x9a] = ubase + U3_E1_9a;
-    table[ubase + U3_E2][0x80] = ubase + U3_E2_80;
-    table[ubase + U3_E2][0x81] = ubase + U3_E2_81;
-    table[ubase + U3_E3][0x80] = ubase + U3_E3_80;
-    table[ubase + U3_E3][0x81] = ubase + U3_E3_81;
+    table[ubase + TRI2_E1][0x9a] = ubase + TRI3_E1_9a;
+    table[ubase + TRI2_E2][0x80] = ubase + TRI3_E2_80;
+    table[ubase + TRI2_E2][0x81] = ubase + TRI3_E2_81;
+    table[ubase + TRI2_E3][0x80] = ubase + TRI3_E3_80;
+    table[ubase + TRI2_E3][0x81] = ubase + TRI3_E3_81;
     
     
     /*
      * Four byte
      */
-    build_urow(ubase, U4_xx, U4_xx_xx);
-    build_urow(ubase, U4_F0, U4_F0_xx);
-    build_urow(ubase, U4_F4, U4_F4_xx);
+    build_urow(ubase, QUAD2_xx, QUAD3_xx_xx);
+    build_urow(ubase, QUAD2_F0, QUAD3_F0_xx);
+    build_urow(ubase, QUAD2_F4, QUAD3_F4_xx);
 
-    build_urow(ubase, U4_xx_xx, U4_xx_xx_xx);
-    build_urow(ubase, U4_F0_xx, U4_F0_xx_xx);
-    build_urow(ubase, U4_F4_xx, U4_F4_xx_xx);
+    build_urow(ubase, QUAD3_xx_xx, QUAD4_xx_xx_xx);
+    build_urow(ubase, QUAD3_F0_xx, QUAD4_F0_xx_xx);
+    build_urow(ubase, QUAD3_F4_xx, QUAD4_F4_xx_xx);
 
-    build_urow(ubase, U4_xx_xx_xx, 0);
-    build_urow(ubase, U4_F0_xx_xx, 0);
-    build_urow(ubase, U4_F4_xx_xx, 0);
+    build_urow(ubase, QUAD4_xx_xx_xx, 0);
+    build_urow(ubase, QUAD4_F0_xx_xx, 0);
+    build_urow(ubase, QUAD4_F4_xx_xx, 0);
 
     /*
      * Mark Unicode spaces
      */
     if (iswspace(0x0085))
-        table[ubase + U2_C2][0x85] = WASSPACE;
+        table[ubase + DUO2_C2][0x85] = WASSPACE;
     if (iswspace(0x00A0))
-        table[ubase + U2_C2][0xA0] = WASSPACE;
+        table[ubase + DUO2_C2][0xA0] = WASSPACE;
     if (iswspace(0x1680)) /* 0x1680 = 0xe1 0x9a 0x80 = OGHAM SPACE MARK*/
-        table[ubase + U3_E1_9a][0x80] = WASSPACE;
+        table[ubase + TRI3_E1_9a][0x80] = WASSPACE;
     for (i=0x2000; i<0x200b+1; i++) {
         if (iswspace(i))
-            table[ubase + U3_E2_80][0x80 + (i&0x6F)] = WASSPACE;
+            table[ubase + TRI3_E2_80][0x80 + (i&0x6F)] = WASSPACE;
     }
     if (iswspace(0x2028))
-        table[ubase + U3_E2_80][0xA8] = WASSPACE;
+        table[ubase + TRI3_E2_80][0xA8] = WASSPACE;
     if (iswspace(0x2029))
-        table[ubase + U3_E2_80][0xA9] = WASSPACE;
+        table[ubase + TRI3_E2_80][0xA9] = WASSPACE;
     if (iswspace(0x202F))
-        table[ubase + U3_E2_80][0xAF] = WASSPACE;
+        table[ubase + TRI3_E2_80][0xAF] = WASSPACE;
     if (iswspace(0x205F))
-        table[ubase + U3_E2_81][0x9F] = WASSPACE;
+        table[ubase + TRI3_E2_81][0x9F] = WASSPACE;
     if (iswspace(0x3000))
-        table[ubase + U3_E3_80][0x80] = WASSPACE;
+        table[ubase + TRI3_E3_80][0x80] = WASSPACE;
 
 
     /*
@@ -439,18 +439,18 @@ void build_unicode(unsigned char default_state, unsigned ubase)
      * illegal sequence.
      */
     for (i=0x80; i<0xA0; i++) {
-        table[ubase + U3_E0][i] = ubase + ILLEGAL;
+        table[ubase + TRI2_E0][i] = ubase + ILLEGAL;
     }
     for (i=0x80; i<0x90; i++) {
-        table[ubase + U4_F0][i] = ubase + ILLEGAL;
+        table[ubase + QUAD2_F0][i] = ubase + ILLEGAL;
     }
     /* Exceeds max possible size of unicode character */
     for (i=0x90; i<0xC0; i++) {
-        table[ubase + U4_F4][i] = ubase + ILLEGAL;
+        table[ubase + QUAD2_F4][i] = ubase + ILLEGAL;
     }
     /* Surrogate space */
     for (i=0xA0; i<0xC0; i++) {
-        table[ubase + U3_Ed][i] = ubase + ILLEGAL;
+        table[ubase + TRI2_ED][i] = ubase + ILLEGAL;
     }
     
 }
