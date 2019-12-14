@@ -224,7 +224,6 @@ cleanup_children(void)
              * has terminated. We want to decrement our count by one
              * then loop around looking for more child processes. */
             children_count++;
-            //fprintf(stderr, "[ ] children left = %u\n", (unsigned)*children_count);
             continue;
         } else if (pid == 0) {
             /* if none of our children are currently exited, then this
@@ -233,11 +232,9 @@ cleanup_children(void)
         } else if (pid == -1 && errno == ECHILD) {
             /* In this condition, there are no child processes. In this
              * case, we just want to handle this the same as pid=0 */
-            //fprintf(stderr, "[ ] no children left\n");
             break;
         } else if (pid < 0) {
             /* Some extraordinary error occured */
-            //fprintf(stderr, "[-] waitpid() %s\n", strerror(errno));
             exit(1);
         }
     }
@@ -374,7 +371,7 @@ int main(int argc, char *argv[])
     while (min < max) {
         unsigned half = (max - min)/2 + min;
         fprintf(stderr, "%8lu\b\b\b\b\b\b\b\b", (unsigned long)(max_diff - min));
-        //fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max);
+        /* fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max); */
         x = word_count("wc", parms, buf + half, max_diff - half);
         y = word_count("progname", parms, buf + half, max_diff - half);
         if (x == y) {
@@ -391,7 +388,7 @@ int main(int argc, char *argv[])
     x = word_count("wc", parms, buf + min_diff, max_diff - min_diff);
     y = word_count(progname, parms, buf + min_diff, max_diff - min_diff);
     printf("Diff string: wc=%ld wc2=%ld \n", x, y);
-    //print_diff(buf, min_diff, max_diff);
+    /* print_diff(buf, min_diff, max_diff); */
     for (i=min_diff; i<max_diff; i++) {
         printf("0x%02x ", buf[i]);
     }
