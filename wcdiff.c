@@ -1,5 +1,6 @@
-/* Compares the output of our 'wc' implementation with the standard
- * 'wc' program in order to find out where they differ. */
+/* Compares the output of two 'wc' programs and where they differ. It
+ * searches for the shortest string that will result in a difference
+ * between the programs. */
 #include <stdio.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -9,6 +10,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 /**
  * Tests the filename to make sure it exists
@@ -258,7 +260,6 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
     /* keep writing until we've written the entire chunk */
     while (offset < length) {
         size_t count;
-
         count = write(h.child_stdin, buf+offset, length-offset);
         if (count == 0) {
             perror("write()");
@@ -276,8 +277,6 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
     close(h.child_stdout);
     close(h.child_stderr);
     cleanup_children();
-
-    printf("%ld %ld %ld\n", results.line_count, results.word_count, results.char_count);
 
     return results.word_count;
 }
@@ -314,23 +313,31 @@ int main(int argc, char *argv[])
     unsigned max = length;
     unsigned min_diff, max_diff;
     long x, y;
-    const char *progname = "./wc-fast-utf8";
-    const char *parms = NULL;
+    const char *progname1 = "./wc2u";
+    const char *progname2 = "./wc2u";
+    const char *parms1 = NULL;
+    char *parms2 = NULL;
+
+    signal(SIGPIPE, SIG_IGN);
 
     /* The first parameter is the program we are testing against 'wc' */
     if (argc < 2 || !is_executable(argv[1])) {
         fprintf(stderr, "[-] first parameter must be an executable program\n");
         return 1;
     } else 
-        progname = argv[1];
+        progname2 = argv[1];
 
     /* The second parameter is option parameters */
     if (argc >= 3) {
-        parms = argv[2];
+        parms1 = argv[2];
     } else
-        parms = NULL;
+        parms1 = NULL;
 
-    
+    if (parms1) {
+        parms2 = malloc(strlen(parms1) + 2);
+        strcpy(parms2, parms1);
+        strcat(parms2, "P");
+    }
 
     /* Create a buffer of deterministically random data. This will be the 
      * same data whenever we run this program, on any CPu, any OS, and
@@ -340,11 +347,21 @@ int main(int argc, char *argv[])
         buf[i] = r_rand(&seed);
 
     /* First, make sure there's a difference */
-    x = word_count("wc", parms, buf, max);
-    y = word_count(progname, parms, buf, max);
+    x = word_count(progname1, parms1, buf, max);
+    y = word_count(progname2, parms2, buf, max);
+    if (x == -1) {
+        fprintf(stderr, "[-] %s: failed\n", progname1);
+        exit(1);
+    }
+    if (y == -1) {
+        fprintf(stderr, "[-] %s: failed\n", progname2);
+        exit(1);
+    }
     if (x == y) {
-        printf("no differnce!\n");
+        fprintf(stderr, "[+] difference: none! (identical results)\n");
         return 0;
+    } else {
+        fprintf(stderr, "[+] difference: %s=%lu %s=%lu\n", progname1, x, progname2, y);
     }
 
     /* Now search for one past the first difference */
@@ -352,9 +369,9 @@ int main(int argc, char *argv[])
     max = length;
     while (min < max) {
         unsigned half = (max - min)/2 + min;
-        fprintf(stderr, "%8lu\b\b\b\b\b\b\b\b", (unsigned long)(length - min));
-        x = word_count("wc", parms, buf, half);
-        y = word_count(progname, parms, buf, half);
+        fprintf(stderr, "max=%8lu\b\b\b\b\b\b\b\b\b\b\b\b", (unsigned long)(max));
+        x = word_count(progname1, parms1, buf, half);
+        y = word_count(progname2, parms2, buf, half);
         if (x == y) {
             /* we went too far, so we need to go back */
             min = half + 1;
@@ -364,35 +381,47 @@ int main(int argc, char *argv[])
         }
     }
     max_diff = max;
+    fprintf(stderr, "max=%8lu\n", (unsigned long)(max_diff));
 
     /* Now search for one before the first difference */
     min = 0;
     max = max_diff;
     while (min < max) {
         unsigned half = (max - min)/2 + min;
-        fprintf(stderr, "%8lu\b\b\b\b\b\b\b\b", (unsigned long)(max_diff - min));
+        fprintf(stderr, "min=%8lu\b\b\b\b\b\b\b\b\b\b\b\b", (unsigned long)(min));
         /* fprintf(stderr, "min=%u, half=%u, max=%u\n", min, half, max); */
-        x = word_count("wc", parms, buf + half, max_diff - half);
-        y = word_count("progname", parms, buf + half, max_diff - half);
+        x = word_count(progname1, parms1, buf + half, max_diff - half);
+        y = word_count(progname2, parms2, buf + half, max_diff - half);
         if (x == y) {
             /* we went too far, so we need to go back */
-            max = half - 1;
+            max = half;
         } else {
             /* we didn't go far enough */
-            min = half;
+            min = half + 1;
         }
     }
     min_diff = min;
+    
+    /* If they are equal, reduce min by one */
+    if (min_diff > 0) {
+        x = word_count(progname1, parms1, buf + min_diff, max_diff - min_diff);
+        y = word_count(progname2, parms2, buf + min_diff, max_diff - min_diff);
+        if (x == y) {
+            min_diff--;
+        }
+    }
+    fprintf(stderr, "min=%8lu\n", (unsigned long)(min_diff));
 
     /* print results */
-    x = word_count("wc", parms, buf + min_diff, max_diff - min_diff);
-    y = word_count(progname, parms, buf + min_diff, max_diff - min_diff);
+    x = word_count(progname1, parms1, buf + min_diff, max_diff - min_diff);
+    y = word_count(progname2, parms2, buf + min_diff, max_diff - min_diff);
     printf("Diff string: wc=%ld wc2=%ld \n", x, y);
     /* print_diff(buf, min_diff, max_diff); */
+    printf("\"");
     for (i=min_diff; i<max_diff; i++) {
-        printf("0x%02x ", buf[i]);
+        printf("\\\\x%02x", buf[i]);
     }
-    printf("\n");
+    printf("\"\n");
     
 
 

@@ -1,13 +1,16 @@
 wc - specification
 ===
 
-The specification for 'wc' is given here:
+This document attempts to document a specification for the `wc` program
+as actually implemented in the real world, such as in the GNU `coreutils`,
+BusyBox, macOS, FreeBSD, QNX, Solaris, and so on.
+
+Unix/POSIX standard
+---
+
+The POSIX standard for 'wc' is given here:
 
     https://pubs.opengroup.org/onlinepubs/007904975/utilities/wc.html
-
-
-Unix standard
----
 
 The command-line parameters are:
 
@@ -27,7 +30,7 @@ Where:
     -c
         Print the number of bytes in the file. This will be just
         the file size if it's a regular file, or the number of bytes
-        if a stream like stdin.
+        if a stream like `stdin`. Exclusive wit the `-m` parameter.
 
     -m
         Print the number of multibyte characters in the file. A 
@@ -36,37 +39,16 @@ Where:
         This is mutually exclusive with `-c` parameter, only
         one or the other may be specified.
 
-    If no options are specified, then the default will be
-    "-lwc".
+If no options are specified, then the default will be
+"-lwc".
 
-    Normal syntax guidelines are followed. This means the options
-    can be specified separate, as in -l -w -c, or grouped,
-    as in "-lwc".
+Normal syntax guidelines are followed. This means the options
+can be specified separate, as in -l -w -c, or grouped,
+as in "-lwc".
 
 
-    -
-
-An important part of this is the LC_CTYPE variable, which determines
-whether a character is single-byte (like ASCCI) or multibyte (like UTF-8).
-
-In addition, LC_CTYPE controls the behavior of `isspace()`/`iswspace()`,
-changing which characters they may decide are whitespace or not. The
-ISO 30112 standard specifies that POSIX Unicode whitespace characters
-are U+0009..U+000D, U+0020, U+1680, U+180E, U+2000..U+2006, 
-U+2008..U+200A, U+2028, U+2029, U+205F, and U+3000. This is discussed
-at the following link:
-
-    https://en.cppreference.com/w/c/string/wide/iswspace
-
-Logic
+Simple tests
 ---
-
-The program counts the following four items:
-
-    - the number of lines
-    - the number of words
-    - the number of characters
-    - the number of bytes
 
 The number of *lines* is counted solely when the newline, '\n',
 character is seen in the input stream. In other words:
@@ -78,7 +60,7 @@ This is because even though there is a line of text, there is no
 newline character, and hence, the result is zero.
 
 The number of *words* is counted solely when a two-character combination
-is seen where where the first is a space (according to iswspace()), and
+is seen where where the first is a space (according to `iswspace()`), and
 the second is not. For this purpose, the preceding character before
 the start of input is assumed to have been a space character.
 
@@ -92,8 +74,8 @@ the start of input is assumed to have been a space character.
     2
 
 The number of *bytes* in a file is simply the file size. However, this
-can't be calculated simply by running a function like `stat` to determine
-filesize, because the input may be piped in via *stdin*. Therefore, it
+can't be calculated solely by running a function like `stat` to determine
+filesize, because the input may be piped in via `stdin`. Therefore, it
 must reflect the total number of bytes read from the input.
 
     $ echo -n "test" | wc -c
@@ -103,6 +85,49 @@ The number of *characters* is the same as the number of *bytes* for
 single-byte character sets (ASCII, EBCDIC), but may be fewer than the
 number of *bytes* for multi-byte character sets (UTF-8, ShiftJIS).
 This is controlled by the *locale*.
+
+Character set
+---
+
+The trivial understanding of word-count is that it operates on ASCII files.
+In reality, the program operates on the currently configured character set.
+
+Before the birth of the Internet in 1983, text files remained internal to
+a computer. There was no expectation of transport such files between computers
+of different manufacturers. Every manufacturer therefore used a different
+character set. The character set would further be defined by the market
+where the computer was sold, to conform to the local language.
+
+The to most popular character-sets have been ASCII and EBCDIC. ASCII defines
+the first 7-bits of a byte, and it the basis for most character sets, where
+the 8th bit are custom characters, different for different vendors. EBCDIC is
+an entirely different character set used by IBM mainframes, which once dominated
+commercial computing, but are today little more than legacy that few people
+have direct experince programming.
+
+Asian languages in particular have used *multi-byte* character-sets. Some 
+of these character-sets simply encode a single character in multiple bytes.
+Others use "shift" states, where a symbol is encountered that changes the
+interpretation of all future bytes until another "shift" happens. A good
+example of this is "ShiftJIS" for Japanese.
+
+When a C program starts up, the current character set is set to "C", which
+is usually a single-byte character set related to either ASCII or EBCDIC.
+Calling `setlocale(LC_CYPE,"")` causes the program to parse environmental
+variables and reset the character-set accordingly.
+
+Linux GNU coreutils always sets the locale this way, so the "word" count
+reflects UTF-8 if that's the environment. However, macOS and FreeBSD only
+does this if the `-m` parameter is set.
+
+LC_CTYPE controls the behavior of `isspace()`/`iswspace()`,
+changing which characters they may decide are whitespace or not. The
+ISO 30112 standard specifies that POSIX Unicode whitespace characters
+are U+0009..U+000D, U+0020, U+1680, U+180E, U+2000..U+2006, 
+U+2008..U+200A, U+2028, U+2029, U+205F, and U+3000. This is discussed
+at the following link:
+
+    https://en.cppreference.com/w/c/string/wide/iswspace
 
 
 UTF-8
@@ -174,3 +199,40 @@ M=macOS, W=Windows10:
 
 References:
     http://jkorpela.fi/chars/spaces.html
+
+POSIXLY_CORRECT
+---
+
+The GNU coreutils deviate from the POSIX standard, but look for an
+environement variable "POSIXLY_CORRECT", at which point they change
+their behave to conform to the POSIX spec.
+
+Line buffering of output
+---
+
+Programs consuming the ouput from `wc` typically expect to receive
+it a line at a time, rathre than partial lines. Therefore, programs
+should set output to line-buffering mode with the following
+standard C library function:
+
+    setvbuf(stdout, NULL, _IOLBF, 0);
+
+Signals
+---
+
+The GNU coreutils use a function called `safe_read()` to read from files.
+This is because the normal `read()` function can exit with an EINTR error
+in the case of signals, which a program must always handle.
+
+Pipes
+---
+
+The GNU coreutils register an atexit() function to cleanly close the `stdout`
+pipe.
+
+
+Binary
+---
+
+Input may be read in some "translated" mode, most famously on Windows which
+translates CR/LF into LF. This needs to be disabled, running in "binary" mode.

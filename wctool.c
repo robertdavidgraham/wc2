@@ -93,7 +93,7 @@ void gen_utf8(void)
         0};
 
         
-    fprintf(stderr, "[+] generating utf8 file\n");
+    fprintf(stderr, "[+] generating utf8 rabndom file\n");
     for (i=0; i<FILESIZE; ) {
         const char *out = list[r_rand(&seed)%16];
         printf("%s", out);
@@ -135,7 +135,7 @@ void gen_ascii(void)
     size_t i;
     unsigned seed = 0;
 
-    fprintf(stderr, "[+] generating ascii file\n");
+    fprintf(stderr, "[+] generating ascii random file\n");
     for (i=0; i<FILESIZE; i++) {
         putchar(" x\ty\rz\na"[r_rand(&seed)%8]);
     }

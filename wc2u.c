@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+static int is_pointer_arithmetic;
 
 /** Hold the configuration parsed from the command-line */
 struct config {
@@ -36,8 +37,6 @@ struct results {
     unsigned long word_count;
     unsigned long char_count;
     unsigned long byte_count;
-    unsigned long illegal_count;
-    int is_space;
 };
 
 
@@ -94,6 +93,7 @@ enum {
 };
 
 unsigned char table[256][256];
+void *table_p[256][256];
 
 
 
@@ -455,217 +455,28 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     
 }
 
-void **table_p;
 
 unsigned PSTATE(void **p)
 {
-    return ((char*)p - (char*)table_p)/256;
+    size_t d = ((char*)p - (char*)table_p);
+    assert((d & !0xFF) == 0);
+    return d/256;
 }
-void **compile_pointers()
+
+void compile_pointers(void)
 {
-    void **pp;
     size_t i;
     size_t j;
 
-    pp = malloc(sizeof(*pp) * 256 * STATE_MAX);
-    if (pp == NULL)
-        abort();
-    table_p = pp;
     for (i=0; i<STATE_MAX; i++) {
         for (j=0; j<256; j++) {
-            pp[i*256 + j] = (char*)table_p + table[i][j]*256;
+            table_p[i][j] = (char*)table_p + table[i][j]*256;
+            assert(PSTATE(table_p[i][j]) == table[i][j]);
         }
     }
-    
-    return pp;
-}
-
-void
-parse_chunk_p(const unsigned char *buf, size_t length, struct results *results, unsigned *inout_state)
-{
-    void **state = (void**)((char*)table_p + *inout_state);
-    size_t i;
-    unsigned long counts[STATE_MAX];
-    if (table_p == NULL)
-        table_p = compile_pointers();
-    
-    state = (void**)((char*)table_p + *inout_state);
-        
-    /* We only care about the first four states, so these will be initialized to zero.
-     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
-    counts[NEWLINE] = 0;
-    counts[NEWWORD] = 0;
-    counts[WASSPACE] = 0;
-    counts[WASWORD] = 0;
-
-    /* This is the inner-loop where 99.9% of the execution time of this program will
-     * be spent. */
-    for (i=0; i<length; i += 1) {
-        unsigned char c = buf[i];
-        state = state[c];
-        counts[((char*)state - (char*)table_p)/256]++;
-    }
-
-    /* Now update the results with what we found in the inner-loop */
-    results->line_count += counts[NEWLINE];
-    results->word_count += counts[NEWWORD];
-    results->char_count += counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
-    results->byte_count += length;
-    *inout_state = (char*)state - (char*)table_p;
-}
-
-static void
-parse_chunk(const unsigned char *buf, size_t length, struct results *results, unsigned *inout_state)
-{
-    unsigned state = *inout_state;
-    size_t i;
-    unsigned long counts[STATE_MAX];
-    unsigned char c;
-
-    /* We only care about the first four states, so these will be initialized to zero.
-     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
-    counts[NEWLINE] = 0;
-    counts[NEWWORD] = 0;
-    counts[WASSPACE] = 0;
-    counts[WASWORD] = 0;
-
-    /* This is the inner-loop where 99.9% of the execution time of this program will
-     * be spent. */
-    for (i=0; i<length; i++) {
-        c = buf[i];
-        state = table[state][c];
-        counts[state]++;
-    }
-
-    /* Now update the results with what we found in the inner-loop */
-    results->line_count += counts[NEWLINE];
-    results->word_count += counts[NEWWORD];
-    results->char_count += counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
-    results->byte_count += length;
-    results->is_space = (state == NEWLINE || state == WASSPACE) && counts[NEWWORD] == 0;
-    *inout_state = state;
 }
 
 
-int is_space(const unsigned char *str, size_t length)
-{
-    struct results results = {0};
-    unsigned state = 0;
-
-    parse_chunk(str, length, &results, &state);
-    return results.is_space && results.illegal_count == 0;
-}
-
-int is_legal(const unsigned char *str, size_t length)
-{
-    unsigned state = 0;
-    unsigned long line_count = 0;
-    unsigned long word_count = 0;
-    unsigned long char_count = 0;
-    size_t i;
-
-    for (i=0; i<length; i++) {
-        unsigned char c = str[i];
-
-        state = table[state][c];
-
-        line_count += state == NEWLINE; /* new line */
-        word_count += state == NEWWORD; /* new word */
-        char_count += state < USPACE; /* char count */
-        if (state == USPACE+ILLEGAL)
-            return 0;
-        if (state == UWORD+ILLEGAL)
-            return 0;
-        if (char_count)
-            return 1;
-    }
-
-    return 1;
-}
-
-
-int selftest_legal(void)
-{
-    unsigned i;
-    unsigned char buf[4];
-
-    for (i=0; i<0xFFFFFFFF; i++) {
-        size_t length;
-        int x;
-        int y;
-        wchar_t wc;
-        mbstate_t state;
-       
-	memset(&state, 0, sizeof(state));
-        
-        if ((i&0xFFFFFF) == 0) {
-            fprintf(stderr, "0x%08x\b\b\b\b\b\b\b\b\b\b", i);
-            fflush(stderr);
-        }
-
-        buf[0] = (i>>0) & 0xFF;
-        buf[1] = (i>>8) & 0xFF;
-        buf[2] = (i>>16) & 0xFF;
-        buf[3] = (i>>24) & 0xFF;
-
-
-        if (i <= 0xFF)
-            length = 1;
-        else if (i <= 0xFFFF)
-            length = 2;
-        else if (i <= 0xFFFFFF)
-            length = 3;
-        else
-            length = 4;
-
-        if ((buf[0] & 0x80) == 0)
-            continue;
-        if (length >= 2 && (buf[1] & 0x80) == 0)
-            continue;
-        if (length >= 3 && (buf[2] & 0x80) == 0)
-            continue;
-        if (length >= 4 && (buf[3] & 0x80) == 0)
-            continue;
-
-        x = mbrtowc(&wc, (char*)buf, length, &state);
-        y = is_legal(buf, length);
-        if (x == -1 && y == 0)
-            continue;
-        else if (x != -1 && y != 0)
-            continue;
-        else {
-            unsigned j;
-            printf("\nfail\n");
-            for (j=0; j<length; j++)
-                printf("%02x ", buf[j]);
-             printf(": mbtowc()=%s uparse()=%s\n",
-                        (x==-1)?"illegal":"legal", (y==1)?"legal":"illegal");
-            exit(1);
-        }
-    }
-    return 0;
-}
-
-int selftest_isspace(void)
-{
-    unsigned i;
-    for (i=0; i<0xFFFF; i++) {
-        unsigned char buf[64];
-        size_t len;
-
-        len = ucs4_to_utf8(buf, sizeof(buf), i);
-        if (len == 0)
-            continue;
-        if (is_space(buf, len) != iswspace(i)) {
-            fprintf(stdout, "0x%04x: is_space()=%s, iswspace()=%s\n",
-                    i,
-                    is_space(buf, len)?"true":"false",
-                    iswspace(i)?"true":"false");
-            exit(1);
-        }
-    }
-    return 0; /* success */
-}
 
 /**
  * This function compiles a DFA-style state-machine for parsing UTF-8 
@@ -705,6 +516,7 @@ void compile_utf8_statemachine(int is_multibyte)
     }
 }
 
+
 /**
  * Print the results structure. We need to make sure there is a space
  * between each of the fields, though not before the first field, and
@@ -713,7 +525,7 @@ void compile_utf8_statemachine(int is_multibyte)
  * So that printing multiple results line up, we also have a consistent
  * column-width for all the columns.
  */
-void
+static void
 print_results(const char *filename, struct results *results, struct config *cfg)
 {
     int needs_space = 0; /* space needed between output */
@@ -742,32 +554,131 @@ print_results(const char *filename, struct results *results, struct config *cfg)
     printf("\n");    
 }
 
+
+static struct results
+parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
+{
+    void **state = (void**)((char*)table_p + *inout_state);
+    const unsigned char *end = buf + length;
+    unsigned long counts[STATE_MAX];
+    
+    
+    state = (void**)((char*)table_p + *inout_state);
+        
+    /* We only care about the first four states, so these will be initialized to zero.
+     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
+    counts[NEWLINE] = 0;
+    counts[NEWWORD] = 0;
+    counts[WASSPACE] = 0;
+    counts[WASWORD] = 0;
+
+    /* This is the inner-loop where 99.9% of the execution time of this program will
+     * be spent. */
+    while (buf < end) {
+        unsigned char c = *buf++;
+        printf("[%u][0x%02x] => [%u]\n", PSTATE(state), c, PSTATE(state[c]));
+        state = state[c];
+        counts[PSTATE(state)]++;
+    }
+
+    /* Save the ending state for the next chunk */
+    *inout_state = (char*)state - (char*)table_p;;
+
+    /* Return the results */
+    {
+        struct results results;
+        results.line_count = counts[NEWLINE];
+        results.word_count = counts[NEWWORD];
+        results.char_count = counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
+        results.byte_count = length;
+
+        return results;
+    }
+}
+
+/** 
+ * Parse a single 64k chunk. Since a word can cross a chunk
+ * boundary, we have to remember the 'state' from a previous
+ * chunk. 
+ */
+static struct results
+parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
+{
+    unsigned state = *inout_state;
+    size_t i;
+    unsigned counts[STATE_MAX];
+    unsigned char c;
+
+    /* We only care about the first four states, so these will be initialized to zero.
+     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
+    counts[NEWLINE] = 0;
+    counts[NEWWORD] = 0;
+    counts[WASSPACE] = 0;
+    counts[WASWORD] = 0;
+
+    /* This is the inner-loop where 99.9% of the execution time of this program will
+     * be spent. */
+    for (i=0; i<length; i++) {
+        c = buf[i];
+        printf("[%u][0x%02x] => [%u]\n", state, c, table[state][c]);
+        state = table[state][c];
+        counts[state]++;
+    }
+
+    /* Save the ending state for the next chunk */
+    *inout_state = state;
+
+    /* Return the results */
+    {
+        struct results results;
+        results.line_count = counts[NEWLINE];
+        results.word_count = counts[NEWWORD];
+        results.char_count = counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
+        results.byte_count = length;
+
+        return results;
+    }
+}
+
 /** 
  * Parse an individual file, or <stdin>, and print the results 
  */
-struct results 
-parse_file(FILE *fp, struct results *totals)
+static struct results 
+parse_file(FILE *fp)
 {
     enum {BUFSIZE=65536};
-    struct results results = {0};
+    struct results results = {0, 0, 0, 0};
     unsigned state = 0; /* state held between chunks */
-    unsigned char buf[BUFSIZE];
+    unsigned char *buf;
+    
+    buf = malloc(BUFSIZE);
+    if (buf == NULL)
+        abort();
 
     /* Process a 64k chunk at a time */
     for (;;) {
         ssize_t count;
+        struct results x;
 
+        /* Read the next chunk of data from the file */
         count = fread(buf, 1, BUFSIZE, fp);
         if (count <= 0)
             break;
-        parse_chunk(buf, count, &results, &state);
+
+        /* Do the word-count algorithm */
+        if (is_pointer_arithmetic)
+            x = parse_chunk_p(buf, count, &state);
+        else
+            x = parse_chunk(buf, count, &state);
+
+        /* Sum the results */
+        results.line_count += x.line_count;
+        results.word_count += x.word_count;
+        results.byte_count += x.byte_count;
+        results.char_count += x.char_count;
     }
 
-    totals->line_count += results.line_count;
-    totals->word_count += results.word_count;
-    totals->byte_count += results.byte_count;
-    totals->char_count += results.char_count;
-
+    free(buf);
     return results;
 }
 
@@ -776,7 +687,7 @@ parse_file(FILE *fp, struct results *totals)
  * results from several files, all the columns will line up. The
  * width for all the columns is determined by the size of the files.
  */
-unsigned
+static unsigned
 get_column_width(int argc, char *argv[], int is_stdin)
 {
     int i;
@@ -911,6 +822,9 @@ read_command_line(int argc, char *argv[])
                         cfg.column_width = atoi(parm);
                     j = maxj;
                     break;
+                case 'P':
+                    is_pointer_arithmetic = 1;
+                    break;
                 default:
                     {
                         char foo[3];
@@ -957,12 +871,15 @@ read_command_line(int argc, char *argv[])
     return cfg;
 }
 
-
 int main(int argc, char *argv[])
 {
     int i;
     struct results totals = {0};
     struct config cfg = {0};
+
+    /* Force output to be an atomic line-at-a-time, so that other
+     * programs reading the output never see a partial line */
+    setvbuf(stdout, NULL, _IOLBF, 0);
 
     /* Read in the configuration parameters from the command-line */
     cfg = read_command_line(argc, argv);
@@ -970,6 +887,8 @@ int main(int argc, char *argv[])
     /* Compile the ASCII/UTF8 state-machine that we'll use to
      * parse multi-byte characters */
     compile_utf8_statemachine(cfg.is_counting_chars);
+    compile_pointers();
+
 
     /* Process all the files specified on the command-line */
     for (i=1; i<argc; i++) {
@@ -986,8 +905,13 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        results = parse_file(fp, &totals);
+        results = parse_file(fp);
         print_results(filename, &results, &cfg);
+        
+        totals.line_count += results.line_count;
+        totals.word_count += results.word_count;
+        totals.byte_count += results.byte_count;
+        totals.char_count += results.char_count;
 
         fclose(fp);
     }
@@ -999,13 +923,23 @@ int main(int argc, char *argv[])
     if (cfg.is_stdin) {
         struct results results;
         FILE *fp;
+
+        /* Make sure we read <stdin> in binary mode, because on some
+         * platforms (Windows) it defaults to text-mode that will
+         * chnage some characters */
         fp = freopen(NULL, "rb", stdin);
         if (fp == NULL) {
             perror("stdin");
             fp = stdin;
         }
-        results = parse_file(fp, &totals);
+
+        results = parse_file(fp);
         print_results(NULL, &results, &cfg);
+        
+        totals.line_count += results.line_count;
+        totals.word_count += results.word_count;
+        totals.byte_count += results.byte_count;
+        totals.char_count += results.char_count;
     }
 
     /* If we read more than one thing, then we also need to print an
