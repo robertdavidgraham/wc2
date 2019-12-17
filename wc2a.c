@@ -1,6 +1,6 @@
 /*
-    A trivial implementation of the word count 'wc' program
-
+    Implements the Unix command-line program 'wc' (word-count)
+    Only ASCII parsing.
 */
 #define _FILE_OFFSET_BITS 64
 #include <stdio.h>
@@ -27,6 +27,7 @@ struct config {
     int is_counting_chars;
     int is_printing_totals;
     unsigned column_width;
+    int is_pointer_arithmetic;
 };
 
 /**
@@ -82,6 +83,42 @@ print_results(const char *filename, struct results *results, struct config *cfg)
     printf("\n");    
 }
 
+static struct results 
+parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
+{
+    unsigned was_space = !*inout_state;
+    unsigned line_count = 0;
+    unsigned word_count = 0;
+    const unsigned char *end = buf + length;
+
+    /* Run the inner loop. This is where 99.9% of the time is spent
+     * in this program. */
+    while (buf < end) {
+        unsigned char c = *buf++;
+        int is_space = my_isspace[c];
+
+        line_count += (c == '\n');
+        word_count += (was_space && !is_space);
+
+        was_space = is_space;
+    }
+
+    /* Save the state, so that the next chunk knows whether this chunk
+     * ended in a 'space' or a 'word'. */
+    *inout_state = !was_space;
+
+    /* Return the results */
+    {
+        struct results results;
+        results.line_count = line_count;
+        results.word_count = word_count;
+        results.char_count = length;
+        results.byte_count = length;
+        
+        return results;
+    }
+}
+
 /** 
  * Parse a single 64k chunk. Since a word can cross a chunk
  * boundary, we have to remember the 'state' from a previous
@@ -94,7 +131,7 @@ parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
     unsigned line_count = 0;
     unsigned word_count = 0;
     size_t i;
-    
+
     /* Run the inner loop. This is where 99.9% of the time is spent
      * in this program. */
     for (i = 0; i < length; i++) {
@@ -127,7 +164,7 @@ parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
  * Parse an individual file, or <stdin>, and print the results 
  */
 static struct results
-parse_file(FILE *fp)
+parse_file(FILE *fp, const struct config *cfg)
 {
     enum {BUFSIZE=65536};
     struct results results = {0, 0, 0, 0};
@@ -140,7 +177,7 @@ parse_file(FILE *fp)
 
     /* Process a 64k chunk at a time */
     for (;;) {
-        ssize_t count;
+        size_t count;
         struct results x;
 
         /* Read the next chunk of data from the file */
@@ -149,7 +186,10 @@ parse_file(FILE *fp)
             break;
 
         /* Do the word-count algorithm */
-        x = parse_chunk(buf, count, &state);
+        if (cfg->is_pointer_arithmetic)
+            x = parse_chunk_p(buf, count, &state);
+        else    
+            x = parse_chunk(buf, count, &state);
 
         /* Sum the results */
         results.line_count += x.line_count;
@@ -302,6 +342,9 @@ read_command_line(int argc, char *argv[])
                         cfg.column_width = atoi(parm);
                     j = maxj;
                     break;
+                case 'P':
+                    cfg.is_pointer_arithmetic = 1;
+                    break;
                 default:
                     {
                         char foo[3];
@@ -363,7 +406,7 @@ int main(int argc, char *argv[])
 
     /* Initialize the table of spaces */
     for (i=0; i<256; i++)
-        my_isspace[i] = isspace(i); 
+        my_isspace[i] = isspace(i) != 0; 
 
     /* Process all the files specified on the command-line */
     for (i=1; i<argc; i++) {
@@ -380,7 +423,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        results = parse_file(fp);
+        results = parse_file(fp, &cfg);
         print_results(filename, &results, &cfg);
         
         totals.line_count += results.line_count;
@@ -408,7 +451,7 @@ int main(int argc, char *argv[])
             fp = stdin;
         }
 
-        results = parse_file(fp);
+        results = parse_file(fp, &cfg);
         print_results(NULL, &results, &cfg);
 
         totals.line_count += results.line_count;

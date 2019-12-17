@@ -1,11 +1,8 @@
 /*
-    The Unix standard 'wc' program, optimized to process UTF-8 input
-    as fast as possible.
-
-    https://pubs.opengroup.org/onlinepubs/007904975/utilities/wc.html
+    Implements the Unix command-line program 'wc' (word-count)
+    Includes UTF-8 parsing.
 */
 #define _FILE_OFFSET_BITS   64
-
 #include <stdio.h>
 #include <ctype.h>
 #include <wctype.h>
@@ -17,9 +14,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-static int is_pointer_arithmetic;
 
-/** Hold the configuration parsed from the command-line */
+/**
+ * Hold the configuration parsed from the command-line
+ */
 struct config {
     size_t file_count;
     int is_stdin;
@@ -29,9 +27,12 @@ struct config {
     int is_counting_chars;
     int is_printing_totals;
     unsigned column_width;
+    int is_pointer_arithmetic;
 };
 
-/** Holds the results from parsing a file */
+/**
+ * Holds the counts from reading a chunk, a file, or totals.
+ */
 struct results {
     unsigned long line_count;
     unsigned long word_count;
@@ -456,11 +457,10 @@ void build_unicode(unsigned char default_state, unsigned ubase)
 }
 
 
-unsigned PSTATE(void **p)
+inline unsigned PSTATE(void **p)
 {
     size_t d = ((char*)p - (char*)table_p);
-    assert((d & !0xFF) == 0);
-    return d/256;
+    return d/(256 * sizeof(void*));
 }
 
 void compile_pointers(void)
@@ -470,7 +470,7 @@ void compile_pointers(void)
 
     for (i=0; i<STATE_MAX; i++) {
         for (j=0; j<256; j++) {
-            table_p[i][j] = (char*)table_p + table[i][j]*256;
+            table_p[i][j] = (char*)table_p + table[i][j]*256*sizeof(void*);
             assert(PSTATE(table_p[i][j]) == table[i][j]);
         }
     }
@@ -563,7 +563,7 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
     unsigned long counts[STATE_MAX];
     
     
-    state = (void**)((char*)table_p + *inout_state);
+    state = (void**)((char*)table_p + (*inout_state) * 256 * sizeof(void*));
         
     /* We only care about the first four states, so these will be initialized to zero.
      * Since we don't use the other ~100 counts for the other states, we won't initialize them */
@@ -576,13 +576,12 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
      * be spent. */
     while (buf < end) {
         unsigned char c = *buf++;
-        printf("[%u][0x%02x] => [%u]\n", PSTATE(state), c, PSTATE(state[c]));
         state = state[c];
         counts[PSTATE(state)]++;
     }
 
     /* Save the ending state for the next chunk */
-    *inout_state = (char*)state - (char*)table_p;;
+    *inout_state = PSTATE(state);
 
     /* Return the results */
     {
@@ -620,7 +619,6 @@ parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
      * be spent. */
     for (i=0; i<length; i++) {
         c = buf[i];
-        printf("[%u][0x%02x] => [%u]\n", state, c, table[state][c]);
         state = table[state][c];
         counts[state]++;
     }
@@ -644,7 +642,7 @@ parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
  * Parse an individual file, or <stdin>, and print the results 
  */
 static struct results 
-parse_file(FILE *fp)
+parse_file(FILE *fp, const struct config *cfg)
 {
     enum {BUFSIZE=65536};
     struct results results = {0, 0, 0, 0};
@@ -657,7 +655,7 @@ parse_file(FILE *fp)
 
     /* Process a 64k chunk at a time */
     for (;;) {
-        ssize_t count;
+        size_t count;
         struct results x;
 
         /* Read the next chunk of data from the file */
@@ -666,7 +664,7 @@ parse_file(FILE *fp)
             break;
 
         /* Do the word-count algorithm */
-        if (is_pointer_arithmetic)
+        if (cfg->is_pointer_arithmetic)
             x = parse_chunk_p(buf, count, &state);
         else
             x = parse_chunk(buf, count, &state);
@@ -823,7 +821,7 @@ read_command_line(int argc, char *argv[])
                     j = maxj;
                     break;
                 case 'P':
-                    is_pointer_arithmetic = 1;
+                    cfg.is_pointer_arithmetic = 1;
                     break;
                 default:
                     {
@@ -905,7 +903,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        results = parse_file(fp);
+        results = parse_file(fp, &cfg);
         print_results(filename, &results, &cfg);
         
         totals.line_count += results.line_count;
@@ -933,7 +931,7 @@ int main(int argc, char *argv[])
             fp = stdin;
         }
 
-        results = parse_file(fp);
+        results = parse_file(fp, &cfg);
         print_results(NULL, &results, &cfg);
         
         totals.line_count += results.line_count;
