@@ -1,5 +1,7 @@
 /*
-    Implements the Unix command-line program 'wc' (word-count)
+    Implements the Unix command-line program 'wc' (word-count) program.
+    This is a demonstration of using 'asynchronous state machines' as the
+    core logic.
     Includes UTF-8 parsing.
 */
 #define _FILE_OFFSET_BITS   64
@@ -14,6 +16,24 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+/**
+ * The global "state-machine" table that we create on startup.
+ */
+unsigned char table[256][256];
+
+/**
+ * This is a translation of the above table, using pointers 
+ * instead of integer offsets, to remove one calculation in
+ * the inner-loop. This is activated when the '-P' option
+ * is set on the command-line.
+ */
+void *table_p[256][256];
+
+/**
+ * Translate from a numeric pointer to somehwere in 'table_p' to
+ * the integer row number for 'table'.
+ */
+#define PSTATE(p) (((char*)p - (char*)table_p)/(256 * sizeof(void*)))
 
 /**
  * Hold the configuration parsed from the command-line
@@ -93,82 +113,12 @@ enum {
     STATE_MAX=UWORD+ILLEGAL+1
 };
 
-unsigned char table[256][256];
-void *table_p[256][256];
-
-
-
-const char *name(unsigned state)
-{
-    static char buf[64];
-    switch (state) {
-        case WASSPACE: return "(WASSPACE)";
-        case NEWLINE: return "(NEWLINE)";
-        case NEWWORD: return "-NEWWORD-";
-        case WASWORD: return "-WASWORD-";
-        case USPACE+DUO2_xx: return "(DUO2_xx)";
-        case USPACE+DUO2_C2: return "(DUO2_C2)";
-        case USPACE+TRI2_E0: return "(TRI2_E0)";
-        case USPACE+TRI2_E1: return "(TRI2_E1)";
-        case USPACE+TRI2_E2: return "(TRI2_E2)";
-        case USPACE+TRI2_E3: return "(TRI2_E3)";
-        case USPACE+TRI2_ED: return "(TRI2_EE)";
-        case USPACE+TRI2_EE: return "(TRI2_EE)";
-        case USPACE+TRI2_xx: return "(TRI2_xx)";
-        case USPACE+TRI3_E0_xx: return "(TRI3_E0_xx)";
-        case USPACE+TRI3_E1_xx: return "(TRI3_E1_xx)";
-        case USPACE+TRI3_E1_9a: return "(TRI3_E1_9a)";
-        case USPACE+TRI3_E2_80: return "(TRI3_E2_80)";
-        case USPACE+TRI3_E2_81: return "(TRI3_E2_81)";
-        case USPACE+TRI3_E2_xx: return "(TRI3_E2_xx)";
-        case USPACE+TRI3_E3_80: return "(TRI3_E3_80)";
-        case USPACE+TRI3_E3_81: return "(TRI3_E3_81)";
-        case USPACE+TRI3_E3_xx: return "(TRI3_E3_xx)";
-        case USPACE+TRI3_Ed_xx: return "(TRI3_Ed_xx)";
-        case USPACE+TRI3_Ee_xx: return "(TRI3_Ee_xx)";
-        case USPACE+TRI3_xx_xx: return "(TRI3_xx_xx)";
-        case USPACE+QUAD2_xx: return "(QUAD2_xx)";
-        case USPACE+QUAD3_xx_xx: return "(QUAD3_xx_xx)";
-        case USPACE+QUAD4_xx_xx_xx: return "(QUAD4_xx_xx_xx)";
-        case USPACE+ILLEGAL: return "(ILLEGAL)";
-        
-        case UWORD+DUO2_xx: return "-DUO2_xx-";
-        case UWORD+DUO2_C2: return "-DUO2_C2-";
-        case UWORD+TRI2_E0: return "-TRI2_E0-";
-        case UWORD+TRI2_E1: return "-TRI2_E1-";
-        case UWORD+TRI2_E2: return "-TRI2_E2-";
-        case UWORD+TRI2_E3: return "-TRI2_E3-";
-        case UWORD+TRI2_ED: return "-TRI2_ED-";
-        case UWORD+TRI2_EE: return "-TRI2_EE-";
-        case UWORD+TRI2_xx: return "-TRI2_xx-";
-        case UWORD+TRI3_E0_xx: return "-TRI3_E0_xx-";
-        case UWORD+TRI3_E1_xx: return "-TRI3_E1_xx-";
-        case UWORD+TRI3_E1_9a: return "-TRI3_E1_9a-";
-        case UWORD+TRI3_E2_80: return "-TRI3_E2_80-";
-        case UWORD+TRI3_E2_81: return "-TRI3_E2_81-";
-        case UWORD+TRI3_E2_xx: return "-TRI3_E2_xx-";
-        case UWORD+TRI3_E3_80: return "-TRI3_E3_80-";
-        case UWORD+TRI3_E3_81: return "-TRI3_E3_81-";
-        case UWORD+TRI3_E3_xx: return "-TRI3_E3_xx-";
-        case UWORD+TRI3_Ed_xx: return "-TRI3_Ed_xx-";
-        case UWORD+TRI3_Ee_xx: return "-TRI3_Ee_xx-";
-        case UWORD+TRI3_xx_xx: return "-TRI3_E0_xx-";
-        case UWORD+QUAD2_xx: return "-QUAD2_xx-";
-        case UWORD+QUAD3_xx_xx: return "-QUAD3_xx_xx-";
-        case UWORD+QUAD4_xx_xx_xx: return "-QUAD4_xx_xx_xx-";
-        case UWORD+ILLEGAL: return "-ILLEGAL-";
-        
-        default:
-            snprintf(buf, sizeof(buf), "%u", state);
-            return buf;
-    }
-}
-
 /**
  * Build an ASCII row. This configures low-order 7-bits, which should
  * be roughly the same for all states
  */
-void build_basic(unsigned char *row, unsigned char default_state, unsigned char ubase)
+static void 
+build_basic(unsigned char *row, unsigned char default_state, unsigned char ubase)
 {
     unsigned c;
     for (c=0; c<256; c++) {
@@ -236,95 +186,6 @@ void build_WASWORD(unsigned char *row)
     build_basic(row, WASWORD, UWORD);
 }
 
-/*
-| bytes | bits |  first  |   last   |   byte1  |   byte2  |   byte3  |   byte4  |
-|:-----:|:----:|:-------:|:--------:|:--------:|:--------:|:--------:|:--------:|
-|   1   |    7 |  U+0000 |   U+007F | 0xxxxxxx |          |          |          |
-|   2   |   11 |  U+0080 |   U+07FF | 110xxxxx | 10xxxxxx |          |          |
-|   3   |   16 |  U+0800 |   U+FFFF | 1110xxxx | 10xxxxxx | 10xxxxxx |          |
-|   4   |   21 | U+10000 | U+10FFFF | 11110xxx | 10xxxxxx | 10xxxxxx | 10xxxxxx |
-*/
-size_t ucs4_to_utf8(unsigned char *buf, size_t sizeof_buf, unsigned wchar)
-{
-    if (0xD800 <= wchar && wchar <= 0xDFFF) {
-        /* surrogates must not be encoded */
-        return 0;
-    }
-
-    if (0x10000 <= wchar && wchar <= 0x10FFFF && sizeof_buf >= 4) {
-        buf[0] = 0xF0 | ((wchar >> 18) & 0x07);
-        buf[1] = 0x80 | ((wchar >> 12) & 0x3F);
-        buf[2] = 0x80 | ((wchar >>  6) & 0x3F);
-        buf[3] = 0x80 | ((wchar >>  0) & 0x3F);
-        return 4;
-    } else if (0x0800 <= wchar && wchar <= 0xFFFF && sizeof_buf >= 3) {
-        buf[0] = 0xE0 | ((wchar >> 12) & 0x0F);
-        buf[1] = 0x80 | ((wchar >>  6) & 0x3F);
-        buf[2] = 0x80 | ((wchar >>  0) & 0x3F);
-        return 3;
-    } else if (0x0080 <= wchar && wchar <= 0x7FF && sizeof_buf >= 2) {
-        buf[0] = 0xC0 | ((wchar >>  6) & 0x1F);
-        buf[1] = 0x80 | ((wchar >>  0) & 0x3F);
-        return 2;
-    } else if (wchar <= 0x7F && sizeof_buf >= 1) {
-        buf[0] = wchar;
-        return 1;
-    } else
-        return 0;
-}
-
-int selftest_ucs4_to_utf8(void)
-{
-    unsigned c;
-    unsigned char buf1[64];
-    unsigned char buf2[64];
-    unsigned max_errors = 10;
-    unsigned was_last_error = 0;
-
-    for (c=0; c<=0x10FFFF; c++) {
-        size_t len1 = ucs4_to_utf8(buf1, sizeof(buf1), c);
-        int len2 = wctomb((char*)buf2, c);
-
-        
-
-        if (len2 < 0 && len1 == 0)
-            continue;
-        
-        if ((int)len1 != len2) {
-            if (!was_last_error)
-                printf("0x%04x failed, len1=%d len2=%d\n", c, (int)len1, (int)len2);
-            was_last_error = 1;
-            continue;
-        }
-
-        if (memcmp(buf1, buf2, len1) != 0) {
-            printf("0x%04x failed, len=%d \nbuf1=%02x %02x %02x %02x \nbuf2=%02x %02x %02x %02x\n", c, len2,
-                    buf1[0], buf1[1], buf1[2], buf1[3], 
-                    buf2[0], buf2[1], buf2[2], buf2[3] 
-                    );
-            if (--max_errors == 0)
-                exit(1);
-        }
-
-        if (was_last_error) {
-            printf("0x%04x succeeded\n", c);
-            was_last_error = 0;
-        }
-    }
-
-    return 0;
-}
-
-void print_row(unsigned char row)
-{
-    unsigned i;
-
-    printf("--row = %s\n", name(row));
-    for (i=0; i<256; i++) {
-        printf("0x%02x -> %s\n", i, name(table[row][i]));
-    }
-
-}
 
 void build_urow(unsigned ubase, unsigned id, unsigned next)
 {
@@ -457,13 +318,14 @@ void build_unicode(unsigned char default_state, unsigned ubase)
 }
 
 
-inline unsigned PSTATE(void **p)
-{
-    size_t d = ((char*)p - (char*)table_p);
-    return d/(256 * sizeof(void*));
-}
 
-void compile_pointers(void)
+/**
+ * For pointer-arithmetic version of the inner loop, converts
+ * the integer indexes to precomputed pointers. This table
+ * will be used when '-P' option is set on the command-line.
+ */
+static void
+compile_pointers(void)
 {
     size_t i;
     size_t j;
@@ -476,13 +338,12 @@ void compile_pointers(void)
     }
 }
 
-
-
 /**
  * This function compiles a DFA-style state-machine for parsing UTF-8 
  * variable-length byte sequences.
  */
-void compile_utf8_statemachine(int is_multibyte)
+static void
+compile_utf8_statemachine(int is_multibyte)
 {
     if (is_multibyte) {
         setlocale(LC_ALL, "");
@@ -555,6 +416,10 @@ print_results(const char *filename, struct results *results, struct config *cfg)
 }
 
 
+/**
+ * A pointer-arithmetic version for tracking state. This alternative
+ * will be called when '-P' is specified on the command-line.
+ */
 static struct results
 parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 {
