@@ -196,3 +196,66 @@ the table into a single dimension in `wc2u.js`:
 
 Despite these syntactic differences, all the versions of this state-machine 
 inner-loop are the same.
+
+
+## Pointer arithmetic
+
+C has a peculiar idiom called "pointer arithmetic", where pointers can
+be incremented. Many use this idiom under the false belief that it's 
+faster. While in some cases it can be, in the general case, it is not.
+
+In our code samples, when we parse the bytes in a buffer, we do something
+like the following, which is valid C and JavaScript code:
+
+    while (i < length) {
+        c = buf[i++];
+    }
+
+The pointer arithmetic version would look like the following:
+
+    end = buf + length;
+    while (buf < end) {
+        c = *buf++;
+    }
+
+To benchmark the difference, our programs have a switch `-P` that
+uses pointer-arithmetic instead. We then benchmark the results across
+a range of CPUs and compilers. The units here are "clock cycles". The
+inner loop of the program takes from 3 to 12 clock cycles.
+
+
+| CPU            | GHz  | compiler            | wc2a | wc2a -P | Diff |
+|----------------|------|---------------------|------|---------|------|
+| Intel i7-5650U | 3.1  | gcc v8.3.0          | 6.0  | 6.2     |  -4% |
+|                | 3.1  | clang v7.0.1-8      | 4.8  | 5.5     | -15% |
+|                | 3.1  | clang v11.0         | 3.6  | 4.2     | -19% |
+|                | 3.1  | gcc v9.2.0-1        | 4.2  | 4.2     |   0% |
+| Intel x5-Z8350 | 1.44 | gcc v4.8.4          | 9.3  | 9.3     |  -1% |
+|                | 1.44 | clang v3.4          | 11.6 | 11.6    |   0% |
+|                | 1.44 | gcc v9.2.1          | 9.5  | 9.6     |   0% |
+|                | 1.44 | clang v9.0.0-2      | 8.3  | 9.6     | -16% |
+| ARM Cortex A53 | 1.2  | gcc v6.3.0          | 11.2 | 11.2    |   0% |
+|                | 1.2  | clang 3.8.1-24+rpi1 | 12.0 | 12.9    |  -8% |
+| ARM Cortex A72 | 1.5  | gcc v9.2.1          | 4.2  | 4.2     |   0% |
+|                | 1.5  | clang v9.0.0-2      | 5.6  | 5.6     |   0% |
+| ARM Cortex A73 | 1.8  | gcc v7.4.0          | 5.5  | 5.1     |   8% |
+
+From these results we can see:
+* Half the time, there is no difference.
+* Only once is there a slight increase in speed, much more often there
+  is a decrease in speed.
+
+The amount of time we can expect to save by replacing an *index* with
+*pointer arithmetic* is one clock cycle per byte. Therefore, we report
+benchmark results in terms of clock cycles.
+
+As we can see, even with short loops of just a few clock cycles in 
+length, we still do not see the benefit of pointer arithmetic that
+programmers think they should achieve.
+
+Programmers are encouraged to program in a language's own idioms.
+Pointer arithmetic is idiomatic C. However, like `goto` or global
+variables, it's a bad idiom. It's something that's useful in isolated
+cases, but it not a good idiom for general purpose programming. It 
+certainly doesn't improve speed in the general case.
+
