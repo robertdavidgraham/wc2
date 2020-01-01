@@ -1,10 +1,52 @@
 # wc2 - optimizing wc with asynchronous state machine parsing
 
-This project implements the classic Unix `wc` command-line program 
-using *asynchronous state machine* parsers, in both C and JavaScript.
-Such parsers are an important part of how the modern Internet works,
-but at the same time, rarely taught in school or covered in textbooks.
-This project is for learning about such parsers.
+There have been multiple articles lately implementing the 
+classic `wc` program in various programming languages, to
+prove they can be "just as fast" as C. They suffer from three
+flaws:
+* they only solve a subset of the problem, so of course they
+  are faster doing ASCII processing when the real program is
+  decoding UTF-8
+* they don't analyze `wc` performance, such as how it runs at
+  different speeds for different inputs, or how close they
+  getting to an ideal machine language version
+* strait computation like this is easy for JITs to optimize,
+  so every programming language should rival C in speed
+
+This project creates optimized versions of `wc`, a trivial
+version that only processes ASCII text
+(`wc2a`), and a complex one that properly handles Unicode UTF-8
+text files (`wc2u`) -- including rejecting overlong encodings.
+
+Two versions of each program are provided, one in C, and one in
+JavaScript. We show that JavaScript with a JIT (Node.js) can indeed
+rival C in performance for such straight computations.
+
+The algorithm used by this project is that of an *asychronous 
+state machine*. The code reads in text a buffer at a time, then
+parses it with the following code:
+
+    for (i=0; i<length; i++)
+        counts[state = table[state][buf[i]]]++;
+
+This code is hard to understand, because it's a state-machine.
+All the work was done in setting up the state-machine, not 
+here in the evaluation. The state-machine was setup to properly
+handle UTF-8 decoding, including rejecting redundant encodings,
+and using Unicode space characters to delimit words, such as
+`U+2009 THIN SPACE`.
+
+Implemented in assembly, this algorithm runs at the speed of L1
+cache access, which varies from 3 to 5 clock cycles per byte, depending
+upon CPU. Compiled in C, it typically varies from 5 to 7 clock cycles.
+JITted in Node.js, it's often 9 clock cycles.
+
+This isn't the fastest implemention possible. With SIMD processors, especially
+AVX512, we should be able to create even faster versions. However,
+using state-machines is very fast without processor-specific optimizations.
+As we show with benchmarks across various CPUs, this runs fast everywhere,
+while SIMD extensions work well for only specific CPUs.
+
 
 ## The code
 
@@ -12,42 +54,63 @@ This projects contains a number of programs:
 
 * `wc2o`
     This is a minimalistic state-machine program, parsing only ASCII,
-    and only `stdin`. The 'o' stands for 'obfuscate C version', as
-    it's really hard to read to code to determine what it does. It
-    does show the essence of state-machines, however.
-
+    and only `stdin`. The 'o' stands for 'obfuscated C version', 
+    because while it highlights the state-machine concept, it 
+    obscures the word-counting concept.
+    
 * `wc2a`
     An implementation of an ASCII-only version of `wc` in the fastest,
-    simplest manner.
+    simplest manner. Both a JavaScript and C version are available.
 
 * `wc2u`
     Includes Unicode UTF-8 parsing. This builds a state-machine with
     around 70 states. However, the evaluation is still very simple.
+    Both a JavaScript and C version is available.
 
 * `wctool`
-    Used to create various test files.
+    Used to create various test files. We use 92-megabyte test files
+    that will contain ASCII, Unicode, constnats spaces or a single word,
+    or random spaces/non-spaces.
 
 * `wcdiff`
     Generates random data then 'diffs' it between the built-in `wc`
-    program and one of the programs in this project. It searches for
-    the minimal pattern that produces a difference between the two
-    programs. For legal text input, the results should be the same.
-    For illegal input, the results are undefined. Each different
-    version of `wc` will produce different results with illegal input.
+    program and one of the programs in this project. For good input,
+    we should have identical results. For bad input with undefined
+    behavior, we'll have different results.
+
+* `wcstream`
+    Reads from `stdin` and writes to `stdout` one byte at a time.
+    This highlights how the BSD/macOS version of `wc` gives different
+    results depending on how input is fragmented/buffered.
 
 ## Performance
 
 The `wc` program is a popular benchmark target, because it's perceived as the
 most minimal, trivial program that does useful processing on input.
 
-However, it's not so simple. For one thing, because of the need to parse
-UTF-8 text, it's not so simple -- UTF-8 parsing is a much more difficult problem
-than simple word counting. Secondly, the speed of the program varies widely
-for different types of input.
+However, it's not so simple. First, UTF-8 character-set parsing is a much more 
+difficult problem than simple word counting. Secondly, the speed of the program 
+varies widely for different types of input.
 
 * Illegal characters cause `wc` to slow down.
 * Random spaces/non-spaces stress the CPU branch prediction, slowing things down.
 * All-space text is faster than all-word (non-space) text.
+
+## Specification
+
+The `wc` program counts *lines*, *words*, and *characters*, printing three
+numbers for each input file.
+
+Optionally, it can count only one or two of those things, with the `-l`, `-w`,
+and `-c` parameters. If no parameters are set, then it defaults to `-lwc`.
+
+Instead of `-c` to count single-byte characters in ASCII files, you may instead
+of `-m` to count the number of multi-byte characters. In our testing of UTF-8,
+we use `-lwm` as the parameters.
+
+Our programs also have a `-P` option for enabling alternate code that uses
+pointer-arithmetic. Our benchmarks show that pointer-arithmetic has little
+value in C program
 
 ## Benchmarks
 
@@ -86,7 +149,7 @@ The time for our two programs are as follows:
 | Program | Input File    | macOS | Linux |
 |---------|---------------|------:|------:|
 | wc2a.c  | (all)         |0.110  | 0.182 |
-| wc2a.js | (all)         |0.281  | 0.392 |
+| wc2a.js | (all)++       |0.281  | 0.392 |
 | wc2u.c  | (all)         |0.206  | 0.278 |
 | wc2u.js | (all)         |0.281  | 0.488 |
 
@@ -97,6 +160,8 @@ These results tell us:
   reasons.
 * This state machine approach is faster than the built-in programs.
 * Even written in JavaScript, the state machine approach is competitive in speed.
+* ++ Actually, the currentJavaScript `wc2a.js` is slower
+  given random input. This anomoly is explained elsewhere.
 
 ## Asynchronous
 
@@ -116,7 +181,7 @@ In particular, the key part of our code is a function
                     unsigned *state);
 
 Some other part of the code reads from a file, a chunk at a time, then passes
-is to the parser function. The parser maintains state from one chunk to the next
+it to the parser function. The parser maintains state from one chunk to the next
 in the "state" variable. It returns counts (line-count, word-count, char-count)
 in the results structure.
 
@@ -130,11 +195,13 @@ This isn't important for files, but is important for network processes. The lega
 Apache method of writing a web server spawns a thread/process per TCP connection.
 Almost all major alternatives to Apache use the asynchronous approach, using
 an asynchronous function like `epoll()` or `kqueue()` to read network traffic,
-then passing it to the parser asynchronously.
+then passing it to the parser asynchronously, either with one thread for the entire
+process, or one-thread-per-CPU.
 
 ## State machine parsers
 
-The minimalistic `wc2o.c` program is shown below:
+The minimalistic `wc2o.c` program is shown below. We've hard-coded the
+state-machine here.
 
     #include <stdio.h>
     int main(void)
@@ -168,16 +235,19 @@ The logic is driven by the tables at the top of the program.
 
 The program `wc2u.c` is essentially the same, except that it builds
 very complicated state-machine tables to handle the complexities 
-of UTF-8 decoding.
+of UTF-8 decoding. Also, it's more efficient, reading in a buffer
+at a time instead of a character at a time (thought `glibc` inlines
+`getchar()` so it's not horribly inefficient).
 
 In the above code, the `trans` table is used to compress the state-machine
 table. Instead of 256 columns per row in `table`, we can reduce this to
 merely 3 columns per row, because all way care about is whether a character
-is a non-space(0), space(1), or newline(2).
+is a non-space(0), space(1), or newline(2). (Actually, 4 columns to make it
+an even power of 2 for efficiency.)
 
-Our `wc2u.c` program doesn't have this step. Also, we don't try to
-compact things as in our obfuscated version. So it's inner loop looks
-like:
+Our `wc2u.c` program doesn't have this translation step. Also, it doesn't
+try to put everything one one line,  but spreads it out to be more readable.
+It's the same logic, but looks like:
 
     for (i=0; i<length; i++) {
         c = buf[i];
@@ -195,7 +265,7 @@ the table into a single dimension in `wc2u.js`:
     }
 
 Despite these syntactic differences, all the versions of this state-machine 
-inner-loop are the same.
+inner-loop are the essentially the same.
 
 
 ## Pointer arithmetic
@@ -225,20 +295,20 @@ inner loop of the program takes from 3 to 12 clock cycles.
 
 
 | CPU            | GHz  | compiler            | wc2a | wc2a -P | Diff |
-|----------------|------|---------------------|------|---------|------|
-| Intel i7-5650U | 3.1  | gcc v8.3.0          | 6.0  | 6.2     |  -4% |
-|                | 3.1  | clang v7.0.1-8      | 4.8  | 5.5     | -15% |
-|                | 3.1  | clang v11.0         | 3.6  | 4.2     | -19% |
-|                | 3.1  | gcc v9.2.0-1        | 4.2  | 4.2     |   0% |
-| Intel x5-Z8350 | 1.44 | gcc v4.8.4          | 9.3  | 9.3     |  -1% |
+|----------------|------|---------------------|-----:|--------:|-----:|
+| Intel i7-5650U | 3.1  | gcc v8.3.0          |  6.0 |  6.2    |  -4% |
+|                | 3.1  | clang v7.0.1-8      |  4.8 |  5.5    | -15% |
+|                | 3.1  | clang v11.0         |  3.6 |  4.2    | -19% |
+|                | 3.1  | gcc v9.2.0-1        |  4.2 |  4.2    |   0% |
+| Intel x5-Z8350 | 1.44 | gcc v4.8.4          |  9.3 |  9.3    |  -1% |
 |                | 1.44 | clang v3.4          | 11.6 | 11.6    |   0% |
-|                | 1.44 | gcc v9.2.1          | 9.5  | 9.6     |   0% |
-|                | 1.44 | clang v9.0.0-2      | 8.3  | 9.6     | -16% |
+|                | 1.44 | gcc v9.2.1          |  9.5 |  9.6    |   0% |
+|                | 1.44 | clang v9.0.0-2      |  8.3 |  9.6    | -16% |
 | ARM Cortex A53 | 1.2  | gcc v6.3.0          | 11.2 | 11.2    |   0% |
 |                | 1.2  | clang 3.8.1-24+rpi1 | 12.0 | 12.9    |  -8% |
-| ARM Cortex A72 | 1.5  | gcc v9.2.1          | 4.2  | 4.2     |   0% |
-|                | 1.5  | clang v9.0.0-2      | 5.6  | 5.6     |   0% |
-| ARM Cortex A73 | 1.8  | gcc v7.4.0          | 5.5  | 5.1     |   8% |
+| ARM Cortex A72 | 1.5  | gcc v9.2.1          |  4.2 |  4.2    |   0% |
+|                | 1.5  | clang v9.0.0-2      |  5.6 |  5.6    |   0% |
+| ARM Cortex A73 | 1.8  | gcc v7.4.0          |  5.5 |  5.1    |   8% |
 
 From these results we can see:
 * Half the time, there is no difference.
