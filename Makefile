@@ -1,6 +1,6 @@
 TIMEFORMAT=%U
 
-CFLAGS += -Wall -Wpedantic -Wextra -O2 
+CFLAGS += -Wall -Wpedantic -Wextra -O2
 
 all: wc2a wc2u wc2o wcdiff wctool wcstream
 

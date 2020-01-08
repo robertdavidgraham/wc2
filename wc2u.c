@@ -421,7 +421,7 @@ print_results(const char *filename, struct results *results, struct config *cfg)
  * will be called when '-P' is specified on the command-line.
  */
 static struct results
-parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
+parse_chunk_pp(const unsigned char *buf, size_t length, unsigned *inout_state)
 {
     void **state = (void**)((char*)table_p + *inout_state);
     const unsigned char *end = buf + length;
@@ -461,6 +461,48 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 }
 
 /** 
+ * Same as 'parse-chunk', but with pointer instead of index
+ */
+static struct results
+parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
+{
+    size_t state = *inout_state;
+    const unsigned char *end = buf + length;
+    unsigned counts[STATE_MAX];
+    unsigned char c;
+
+    /* We only care about the first four states, so these will be initialized to zero.
+     * Since we don't use the other ~100 counts for the other states, we won't initialize them */
+    counts[NEWLINE] = 0;
+    counts[NEWWORD] = 0;
+    counts[WASSPACE] = 0;
+    counts[WASWORD] = 0;
+
+    /* This is the inner-loop where 99.9% of the execution time of this program will
+     * be spent. */
+    while (buf < end) {
+        c = *buf++;
+        state = table[state][c];
+        counts[state]++;
+    }
+
+    /* Save the ending state for the next chunk */
+    *inout_state = state;
+
+    /* Return the results */
+    {
+        struct results results;
+        results.line_count = counts[NEWLINE];
+        results.word_count = counts[NEWWORD];
+        results.char_count = counts[NEWLINE] + counts[WASSPACE] + counts[WASWORD] + counts[NEWWORD];
+        results.byte_count = length;
+
+        return results;
+    }
+}
+
+
+/** 
  * Parse a single 64k chunk. Since a word can cross a chunk
  * boundary, we have to remember the 'state' from a previous
  * chunk. 
@@ -468,7 +510,7 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 static struct results
 parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
 {
-    unsigned state = *inout_state;
+    size_t state = *inout_state;
     size_t i;
     unsigned counts[STATE_MAX];
     unsigned char c;
@@ -529,7 +571,9 @@ parse_file(FILE *fp, const struct config *cfg)
             break;
 
         /* Do the word-count algorithm */
-        if (cfg->is_pointer_arithmetic)
+        if (cfg->is_pointer_arithmetic > 1)
+            x = parse_chunk_pp(buf, count, &state);
+        else if (cfg->is_pointer_arithmetic)
             x = parse_chunk_p(buf, count, &state);
         else
             x = parse_chunk(buf, count, &state);
@@ -686,7 +730,7 @@ read_command_line(int argc, char *argv[])
                     j = maxj;
                     break;
                 case 'P':
-                    cfg.is_pointer_arithmetic = 1;
+                    cfg.is_pointer_arithmetic++;
                     break;
                 default:
                     {
