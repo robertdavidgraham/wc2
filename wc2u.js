@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 var fs = require("fs");
 const WAS_SPACE = 0;
 const NEW_LINE = 1;
@@ -120,10 +121,12 @@ function parse_configuration(argv)
     for (var i in argv) {
         if (argv[i].charAt(0) == '-') {
             for (var j=1; j<argv[i].length; j++) {
+                
                 switch (argv[i].charAt(j)) {
                     case 'l': cfg.is_line_count = true; break;
                     case 'w': cfg.is_word_count = true; break;
                     case 'c': cfg.is_char_count = true; break;
+                    case 'm': cfg.is_char_count = true; break;
                     case '?': print_help(); break;
                     case 'h': print_help(); break;
                     case '-':
@@ -135,7 +138,7 @@ function parse_configuration(argv)
                         }
                         break;
                     default:
-                        console.log("[-] unknown option: -" + argv[i].charAt(i));
+                        console.log("[-] unknown option: -" + argv[i].charAt(j));
                         process.exit(1);
                         break;
                 }
