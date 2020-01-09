@@ -2,32 +2,46 @@
 
 There have been multiple articles lately implementing the 
 classic `wc` program in various programming languages, to
-prove they can be "just as fast" as C. They suffer from three
-flaws:
-* they only solve a subset of the problem, so of course they
-  are faster doing ASCII processing when the real program is
-  decoding UTF-8
-* they don't analyze `wc` performance, such as how it runs at
-  different speeds for different inputs, or how close they
-  getting to an ideal machine language version
-* strait computation like this is easy for JITs to optimize,
-  so every programming language should rival C in speed
+prove they can be "just as fast" as C.
 
-This project creates optimized versions of `wc`, a trivial
-version that only processes ASCII text
-(`wc2a`), and a complex one that properly handles Unicode UTF-8
-text files (`wc2u`) -- including rejecting overlong encodings.
+In this project, we implement word-count using a different
+algorithm. In particular, we implement it using an
+*asynchronous state machine parser*.
 
-Two versions of each program are provided, one in C, and one in
-JavaScript. We show that JavaScript with a JIT (Node.js) can indeed
-rival C in performance for such straight computations.
+This project contains three versions of this:
+* `wc2.c`
+    This is the primary implementation, using state-machines to
+    process UTF-8 text.
+* `wc2o.c`
+    This is a simplified version in 25 lines of code, which
+    obfuscates the "counting" aspect by highlights the "state-machine"
+    aspect.
+* `wc2.js`
+    A JavaScript version, showing the algorithm in other languages.
 
-The algorithm used by this project is that of an *asychronous 
-state machine*. The code reads in text a buffer at a time, then
-parses it with the following code:
+It also contains some additional tools:
 
-    for (i=0; i<length; i++)
-        counts[state = table[state][buf[i]]]++;
+* `wctool`
+    To generate large files to test with containing such things as 
+    randomize UTF-8 text.
+* `wcdiff`
+    To find differences between two implementations of `wc`.
+* `wcstream`
+    Fragments a stream to demonstrate a bug in the macOS 
+    version.
+
+
+## The basic algorithm
+
+The algorithm reads input and passes each byte one at a time
+to a state-machine. It looks something like:
+
+    length = fread(buf, 1, sizeof(buf), fp);
+    for (i=0; i<length; i++) {
+        c = buf[i];
+        state = table[state][c];
+        counts[state]++;
+    }
 
 This code is hard to understand, because it's a state-machine.
 All the work was done in setting up the state-machine, not 
@@ -36,11 +50,6 @@ handle UTF-8 decoding, including rejecting redundant encodings,
 and using Unicode space characters to delimit words, such as
 `U+2009 THIN SPACE`.
 
-Implemented in assembly, this algorithm runs at the speed of L1
-cache access, which varies from 3 to 5 clock cycles per byte, depending
-upon CPU. Compiled in C, it typically varies from 5 to 7 clock cycles.
-JITted in Node.js, it's often 9 clock cycles.
-
 This isn't the fastest implemention possible. With SIMD processors, especially
 AVX512, we should be able to create even faster versions. However,
 using state-machines is very fast without processor-specific optimizations.
@@ -48,69 +57,6 @@ As we show with benchmarks across various CPUs, this runs fast everywhere,
 while SIMD extensions work well for only specific CPUs.
 
 
-## The code
-
-This projects contains a number of programs:
-
-* `wc2o`
-    This is a minimalistic state-machine program, parsing only ASCII,
-    and only `stdin`. The 'o' stands for 'obfuscated C version', 
-    because while it highlights the state-machine concept, it 
-    obscures the word-counting concept.
-    
-* `wc2a`
-    An implementation of an ASCII-only version of `wc` in the fastest,
-    simplest manner. Both a JavaScript and C version are available.
-
-* `wc2u`
-    Includes Unicode UTF-8 parsing. This builds a state-machine with
-    around 70 states. However, the evaluation is still very simple.
-    Both a JavaScript and C version is available.
-
-* `wctool`
-    Used to create various test files. We use 92-megabyte test files
-    that will contain ASCII, Unicode, constnats spaces or a single word,
-    or random spaces/non-spaces.
-
-* `wcdiff`
-    Generates random data then 'diffs' it between the built-in `wc`
-    program and one of the programs in this project. For good input,
-    we should have identical results. For bad input with undefined
-    behavior, we'll have different results.
-
-* `wcstream`
-    Reads from `stdin` and writes to `stdout` one byte at a time.
-    This highlights how the BSD/macOS version of `wc` gives different
-    results depending on how input is fragmented/buffered.
-
-## Performance
-
-The `wc` program is a popular benchmark target, because it's perceived as the
-most minimal, trivial program that does useful processing on input.
-
-However, it's not so simple. First, UTF-8 character-set parsing is a much more 
-difficult problem than simple word counting. Secondly, the speed of the program 
-varies widely for different types of input.
-
-* Illegal characters cause `wc` to slow down.
-* Random spaces/non-spaces stress the CPU branch prediction, slowing things down.
-* All-space text is faster than all-word (non-space) text.
-
-## Specification
-
-The `wc` program counts *lines*, *words*, and *characters*, printing three
-numbers for each input file.
-
-Optionally, it can count only one or two of those things, with the `-l`, `-w`,
-and `-c` parameters. If no parameters are set, then it defaults to `-lwc`.
-
-Instead of `-c` to count single-byte characters in ASCII files, you may instead
-of `-m` to count the number of multi-byte characters. In our testing of UTF-8,
-we use `-lwm` as the parameters.
-
-Our programs also have a `-P` option for enabling alternate code that uses
-pointer-arithmetic. Our benchmarks show that pointer-arithmetic has little
-value in C program
 
 ## Benchmarks
 
@@ -146,12 +92,10 @@ These results tell us:
 
 The time for our two programs are as follows:
 
-| Program | Input File    | macOS | Linux |
-|---------|---------------|------:|------:|
-| wc2a.c  | (all)         |0.110  | 0.182 |
-| wc2a.js | (all)++       |0.281  | 0.392 |
-| wc2u.c  | (all)         |0.206  | 0.278 |
-| wc2u.js | (all)         |0.281  | 0.488 |
+| Program | Input File   | macOS | Linux |
+|---------|--------------|------:|------:|
+| wc2.c   | (all)        |0.206  | 0.278 |
+| wc2.js  | (all)        |0.281  | 0.488 |
 
 These results tell us:
 
@@ -160,8 +104,6 @@ These results tell us:
   reasons.
 * This state machine approach is faster than the built-in programs.
 * Even written in JavaScript, the state machine approach is competitive in speed.
-* ++ Actually, the currentJavaScript `wc2a.js` is slower
-  given random input. This anomoly is explained elsewhere.
 
 ## Asynchronous
 
