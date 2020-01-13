@@ -15,8 +15,10 @@ int main(void)
     int state = 0;
     int c;
 
-    while ((c = getchar()) != EOF)
-        counts[state = table[state][column[c]]]++;
+    while ((c = getchar()) != EOF) {
+        state = table[state][column[c]];
+        counts[state]++;
+    }
 
     printf("%lu %lu %lu\n", counts[1], counts[2], 
                 counts[0] + counts[1] + counts[2] + counts[3]);

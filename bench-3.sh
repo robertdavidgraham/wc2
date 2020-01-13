@@ -14,7 +14,6 @@ bench ./wc2 -lwm ascii.txt
 bench ./wc2 -lwm utf8.txt
 bench ./wc2 -lwm pocorgtfo18.pdf
 
-
 bench ./wc2.js -lwm space.txt
 bench ./wc2.js -lwm word.txt
 bench ./wc2.js -lwm ascii.txt
