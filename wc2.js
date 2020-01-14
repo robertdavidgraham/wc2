@@ -12,7 +12,7 @@ function table_init()
     var i;
     var spaces = [9,10,11,12,13,32];
 
-    table = Buffer.alloc(4 * 256);
+    table = new Buffer(4 * 256);
     
     /* Transitions when not a space */
     for (i=0; i<256; i++) {
@@ -94,7 +94,7 @@ function print_results(results, cfg, filename)
 function parse_file(fd, filename, cfg)
 {
     var results = new Results();
-    var buf = Buffer.alloc(65536);
+    var buf = new Buffer(65536);
 
     for (;;) {
         var length = fs.readSync(fd, buf, 0, 65536);
