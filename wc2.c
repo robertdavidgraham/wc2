@@ -22,7 +22,7 @@
 unsigned char table[256][256];
 
 /**
- * This is a translation of the above table, using pointers 
+ * This is a translation of the above table, using pointers
  * instead of integer offsets, to remove one calculation in
  * the inner-loop. This is activated when the '-P' option
  * is set on the command-line.
@@ -69,7 +69,7 @@ struct results {
 |   3   |   16 |  U+0800 |   U+FFFF | 1110xxxx | 10xxxxxx | 10xxxxxx |          |
 |   4   |   21 | U+10000 | U+10FFFF | 11110xxx | 10xxxxxx | 10xxxxxx | 10xxxxxx |
  */
-enum {  
+enum {
     DUO2_xx,
     DUO2_C2,
     TRI2_E0,
@@ -117,7 +117,7 @@ enum {
  * Build an ASCII row. This configures low-order 7-bits, which should
  * be roughly the same for all states
  */
-static void 
+static void
 build_basic(unsigned char *row, unsigned char default_state, unsigned char ubase)
 {
     unsigned c;
@@ -214,13 +214,13 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     size_t i;
 
     build_basic(table[ubase + ILLEGAL], default_state, ubase);
-    
+
     /*
      * Two byte
      */
     build_urow(ubase, DUO2_xx, 0);
     build_urow(ubase, DUO2_C2, 0);
- 
+
     /*
      * Three byte
      */
@@ -231,7 +231,7 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     build_urow(ubase, TRI2_ED, TRI3_Ed_xx);
     build_urow(ubase, TRI2_EE, TRI3_Ee_xx);
     build_urow(ubase, TRI2_xx, TRI3_xx_xx);
-    
+
     build_urow(ubase, TRI3_E0_xx, 0);
     build_urow(ubase, TRI3_E1_xx, 0);
     build_urow(ubase, TRI3_E1_9a, 0);
@@ -250,8 +250,8 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     table[ubase + TRI2_E2][0x81] = ubase + TRI3_E2_81;
     table[ubase + TRI2_E3][0x80] = ubase + TRI3_E3_80;
     table[ubase + TRI2_E3][0x81] = ubase + TRI3_E3_81;
-    
-    
+
+
     /*
      * Four byte
      */
@@ -314,7 +314,7 @@ void build_unicode(unsigned char default_state, unsigned ubase)
     for (i=0xA0; i<0xC0; i++) {
         table[ubase + TRI2_ED][i] = ubase + ILLEGAL;
     }
-    
+
 }
 
 
@@ -339,7 +339,7 @@ compile_pointers(void)
 }
 
 /**
- * This function compiles a DFA-style state-machine for parsing UTF-8 
+ * This function compiles a DFA-style state-machine for parsing UTF-8
  * variable-length byte sequences.
  */
 static void
@@ -395,24 +395,24 @@ print_results(const char *filename, struct results *results, struct config *cfg)
     /* -l */
     if (cfg->is_counting_lines)
         printf("%s%*lu", needs_space++?" ":"", width, results->line_count);
-    
+
     /* -w */
     if (cfg->is_counting_words)
         printf("%s%*lu", needs_space++?" ":"", width, results->word_count);
-    
+
     /* -c */
     if (cfg->is_counting_bytes)
         printf("%s%*lu", needs_space++?" ":"", width, results->byte_count);
-    
+
     /* -m */
     if (cfg->is_counting_chars)
         printf("%s%*lu", needs_space++?" ":"", width, results->char_count);
-    
+
     /* NULL if <stdin>, "total" for the last line showing totals, otherwise,
      * the name of the file that was processed */
     if (filename)
         printf("%s%s", needs_space++?" ":"", filename);
-    printf("\n");    
+    printf("\n");
 }
 
 
@@ -426,10 +426,10 @@ parse_chunk_pp(const unsigned char *buf, size_t length, unsigned *inout_state)
     void **state = (void**)((char*)table_p + *inout_state);
     const unsigned char *end = buf + length;
     unsigned long counts[STATE_MAX];
-    
-    
+
+
     state = (void**)((char*)table_p + (*inout_state) * 256 * sizeof(void*));
-        
+
     /* We only care about the first four states, so these will be initialized to zero.
      * Since we don't use the other ~100 counts for the other states, we won't initialize them */
     counts[NEWLINE] = 0;
@@ -460,7 +460,7 @@ parse_chunk_pp(const unsigned char *buf, size_t length, unsigned *inout_state)
     }
 }
 
-/** 
+/**
  * Same as 'parse-chunk', but with pointer instead of index
  */
 static struct results
@@ -502,10 +502,10 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 }
 
 
-/** 
+/**
  * Parse a single 64k chunk. Since a word can cross a chunk
  * boundary, we have to remember the 'state' from a previous
- * chunk. 
+ * chunk.
  */
 static struct results
 parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
@@ -545,17 +545,17 @@ parse_chunk(const unsigned char *buf, size_t length, unsigned *inout_state)
     }
 }
 
-/** 
- * Parse an individual file, or <stdin>, and print the results 
+/**
+ * Parse an individual file, or <stdin>, and print the results
  */
-static struct results 
+static struct results
 parse_file(FILE *fp, const struct config *cfg)
 {
     enum {BUFSIZE=65536};
     struct results results = {0, 0, 0, 0};
     unsigned state = 0; /* state held between chunks */
     unsigned char *buf;
-    
+
     buf = malloc(BUFSIZE);
     if (buf == NULL)
         abort();
@@ -607,7 +607,7 @@ get_column_width(int argc, char *argv[], int is_stdin)
 
         if (filename[0] == '-')
             continue;
-        
+
         if (stat(filename, &st) == 0) {
             if (S_ISREG(st.st_mode)) {
                 if (maxsize <= st.st_size)
@@ -626,7 +626,7 @@ get_column_width(int argc, char *argv[], int is_stdin)
         width++;
         maxsize /= 10;
     }
-    
+
     return width;
 }
 
@@ -656,7 +656,7 @@ read_command_line(int argc, char *argv[])
 {
     struct config cfg;
     int i;
-    
+
     memset(&cfg, 0, sizeof(cfg));
 
     /* We set this as the errno so that 'perror()' will print a localized
@@ -751,9 +751,9 @@ read_command_line(int argc, char *argv[])
         cfg.is_stdin = 1;
 
     /* Default is -lwc if no options are given */
-    if (cfg.is_counting_lines == 0 
-        && cfg.is_counting_words == 0 
-        && cfg.is_counting_bytes == 0 
+    if (cfg.is_counting_lines == 0
+        && cfg.is_counting_words == 0
+        && cfg.is_counting_bytes == 0
         && cfg.is_counting_chars == 0) {
         cfg.is_counting_lines = 1;
         cfg.is_counting_words = 1;
@@ -781,8 +781,8 @@ read_command_line(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     int i;
-    struct results totals = {0};
-    struct config cfg = {0};
+    struct results totals = {0,0,0,0};
+    struct config cfg;
 
     /* Force output to be an atomic line-at-a-time, so that other
      * programs reading the output never see a partial line */
@@ -814,7 +814,7 @@ int main(int argc, char *argv[])
 
         results = parse_file(fp, &cfg);
         print_results(filename, &results, &cfg);
-        
+
         totals.line_count += results.line_count;
         totals.word_count += results.word_count;
         totals.byte_count += results.byte_count;
@@ -842,7 +842,7 @@ int main(int argc, char *argv[])
 
         results = parse_file(fp, &cfg);
         print_results(NULL, &results, &cfg);
-        
+
         totals.line_count += results.line_count;
         totals.word_count += results.word_count;
         totals.byte_count += results.byte_count;

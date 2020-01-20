@@ -17,7 +17,7 @@
  */
 int is_exists(const char *filename)
 {
-    struct stat st = {0};
+    struct stat st;
 
     if (stat(filename, &st) != 0) {
         fprintf(stderr, "[-] %s: %s\n", filename, strerror(errno));
@@ -31,7 +31,7 @@ int is_exists(const char *filename)
  */
 int is_executable(const char *filename)
 {
-    struct stat st = {0};
+    struct stat st;
 
     if (stat(filename, &st) != 0) {
         fprintf(stderr, "[-] %s: %s\n", filename, strerror(errno));
@@ -62,7 +62,7 @@ my_spawn(const char *progname, const char *parms)
     int err;
     char **new_argv;
 
-    
+
     err = pipe(pipe_stdout);
     if (err < 0) {
         fprintf(stderr, "[-] pipe(): %s\n", strerror(errno));
@@ -78,9 +78,9 @@ my_spawn(const char *progname, const char *parms)
         fprintf(stderr, "[-] pipe(): %s\n", strerror(errno));
         return handles;
     }
-    
 
-    
+
+
     /* Configure the parent end of the pipes be be non-inheritable.
      * In other words, none of the children can read from these
      * pipes, nor will they exist in child process space */
@@ -93,32 +93,32 @@ my_spawn(const char *progname, const char *parms)
         fprintf(stderr, "[-] fork(): %s\n", strerror(errno));
         return handles;
     }
-    
+
     /* Setup child parameters */
     new_argv = malloc(10 * sizeof(char*));
     new_argv[0] = (char *)progname;
     new_argv[1] = (char *)parms;
     new_argv[2] = NULL;
     new_argv[3] = NULL;
-    
+
     if (pid == 0) {
         int err;
 
         close(pipe_stdin[1]);
         close(pipe_stdout[0]);
         close(pipe_stderr[0]);
-        
+
         dup2(pipe_stdin[0], 0);
         dup2(pipe_stdout[1], 1);
         dup2(pipe_stderr[1], 2);
-        
+
         /* Now execute our child with new program */
         err = execvp(progname, new_argv);
         if (err) {
             fprintf(stderr, "[+] execvp(%s) failed: %s\n", progname, strerror(errno));
             return handles;
         }
-        
+
     } else {
         handles.child_stdin = pipe_stdin[1];
         handles.child_stdout = pipe_stdout[0];
@@ -153,7 +153,7 @@ get_integer(int fd)
         count = read(fd, &c, 1);
         if (count <= 0)
             return -1;
-        
+
         switch (state) {
         case 0:
             if (c == '\n')
@@ -178,7 +178,7 @@ get_integer(int fd)
     return result;
 }
 /**
- * Read the results, which are a series of integers from the 
+ * Read the results, which are a series of integers from the
  * 'wc' program. */
 struct wcresults
 get_results(int fd)
@@ -209,7 +209,7 @@ cleanup_children(void)
 
     for (;;) {
         int pid;
-        
+
         /* Reap children.
          * The first parameter is set to -1 to indicate that we want
          * information about ANY of our children processes.
@@ -220,7 +220,7 @@ cleanup_children(void)
          * immediately
          */
         pid = waitpid(-1, 0, WNOHANG);
-        
+
         if (pid > 0) {
             /* If we get back a valid PID, that means the child process
              * has terminated. We want to decrement our count by one
@@ -249,7 +249,7 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
     struct handles h;
     size_t offset = 0;
     struct wcresults results;
- 
+
 
     h = my_spawn(progname, parms);
     if (h.child_stdin <= 0 || h.child_stdout <= 0) {
@@ -267,13 +267,13 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
         }
         offset += count;
     }
-    
+
     /* Close the handle, telling the child process that input has ended */
     close(h.child_stdin);
 
     /* Read the results from the child */
     results = get_results(h.child_stdout);
-    
+
     close(h.child_stdout);
     close(h.child_stderr);
     cleanup_children();
@@ -282,7 +282,7 @@ word_count(const char *progname, const char *parms, const unsigned char *buf, si
 }
 
 
-unsigned 
+unsigned
 utf8_len(unsigned char c)
 {
     if (c < 0x80) {
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
     if (argc < 2 || !is_executable(argv[1])) {
         fprintf(stderr, "[-] first parameter must be an executable program\n");
         return 1;
-    } else 
+    } else
         progname2 = argv[1];
 
     /* The second parameter is option parameters */
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
         strcat(parms2, "P");
     }
 
-    /* Create a buffer of deterministically random data. This will be the 
+    /* Create a buffer of deterministically random data. This will be the
      * same data whenever we run this program, on any CPu, any OS, and
      * any compiler */
     buf = malloc(length);
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
         }
     }
     min_diff = min;
-    
+
     /* If they are equal, reduce min by one */
     if (min_diff > 0) {
         x = word_count(progname1, parms1, buf + min_diff, max_diff - min_diff);
@@ -422,7 +422,7 @@ int main(int argc, char *argv[])
         printf("\\\\x%02x", buf[i]);
     }
     printf("\"\n");
-    
+
 
 
 /*
