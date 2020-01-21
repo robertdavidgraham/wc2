@@ -7,6 +7,6 @@ bench() {
     done | sort -n | head -n 1
 }
 export LC_CTYPE=en_US.UTF-8
-locale | grep LC_CTYPE 1>&2
+./wctool --locale
 bench ./wc2 -lwm pocorgtfo18.pdf
 bench ./wc2 -lwmP pocorgtfo18.pdf
