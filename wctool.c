@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <locale.h>
 
 enum {FILESIZE=92296537};
 
@@ -149,8 +150,12 @@ int main(int argc, char *argv[])
         gen_allword();
     else if (argc > 1 && (tolower(argv[1][0]) == 's' || strcmp(argv[1], "-s") == 0 || strcmp(argv[1], "--allspace") == 0))
         gen_allspace();
-    else
+    else if (argc > 1 && (tolower(argv[1][0]) == 'a' || strcmp(argv[1], "-a") == 0 || strcmp(argv[1], "--ascii") == 0))
         gen_ascii();
+    else {
+        setlocale(LC_CTYPE, "");
+        printf("LC_CTYPE=%s\n", setlocale(LC_CTYPE, NULL));
+    }
 
     return 0;
 }
