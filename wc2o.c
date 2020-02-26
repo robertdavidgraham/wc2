@@ -20,7 +20,7 @@ int main(void)
         counts[state]++;
     }
 
-    printf("%lu %lu %lu\n", counts[1], counts[2], 
+    printf("%7lu %7lu %7lu\n", counts[1], counts[2], 
                 counts[0] + counts[1] + counts[2] + counts[3]);
     return 0;
 }
