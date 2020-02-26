@@ -4,8 +4,8 @@
 #include <stdio.h>
 int main(void)
 {
-    static const unsigned char table[4][4] = {
-        {2,0,1,0,}, {2,0,1,0,}, {3,0,1,0,},  {3,0,1,0,}
+    static const unsigned char table[4][3] = {
+        {2,0,1}, {2,0,1}, {3,0,1}, {3,0,1}
     };
     static const unsigned char column[256] = {
         0,0,0,0,0,0,0,0,0,1,2,1,1,1,0,0,0,
