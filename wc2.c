@@ -4,6 +4,8 @@
     core logic.
     Includes UTF-8 parsing.
 */
+#define _CRT_SECURE_NO_WARNINGS
+#define WIN32_LEAN_AND_MEAN
 #define _FILE_OFFSET_BITS   64
 #include <stdio.h>
 #include <ctype.h>
@@ -15,6 +17,15 @@
 #include <assert.h>
 #include <errno.h>
 #include <sys/stat.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
+/* Windows thing */
+#if !defined(S_ISREG) && defined(S_IFMT) && defined(S_IFREG)
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif
 
 /**
  * The global "state-machine" table that we create on startup.
@@ -786,7 +797,9 @@ int main(int argc, char *argv[])
 
     /* Force output to be an atomic line-at-a-time, so that other
      * programs reading the output never see a partial line */
+#ifndef _WIN32
     setvbuf(stdout, NULL, _IOLBF, 0);
+#endif
 
     /* Read in the configuration parameters from the command-line */
     cfg = read_command_line(argc, argv);
@@ -854,5 +867,17 @@ int main(int argc, char *argv[])
     if (cfg.is_printing_totals)
         print_results("total", &totals, &cfg);
 
+#if _WIN32
+    {
+      FILETIME begin;
+      FILETIME end;
+      FILETIME kernel;
+      FILETIME user;
+        if (GetProcessTimes(GetCurrentProcess(), &begin, &end, &kernel, &user)) {
+            unsigned long long elapsed = ((unsigned long long)user.dwLowDateTime | (unsigned long long)user.dwHighDateTime<<32ULL)/10000ULL;
+            printf("user %lu.%03u\n", (unsigned)(elapsed/1000ULL), (unsigned)(elapsed % 1000));
+        }
+    }
+#endif
     return 0;
 }
