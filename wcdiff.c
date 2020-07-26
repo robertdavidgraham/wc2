@@ -313,8 +313,8 @@ int main(int argc, char *argv[])
     unsigned max = length;
     unsigned min_diff, max_diff;
     long x, y;
-    const char *progname1 = "./wc2u";
-    const char *progname2 = "./wc2u";
+    const char *progname1 = "./wc2";
+    const char *progname2 = "./wc2";
     const char *parms1 = NULL;
     char *parms2 = NULL;
 

@@ -467,7 +467,7 @@ static struct results
 parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 {
     size_t state = *inout_state;
-    const unsigned char *end = buf + length;
+    const unsigned char *end;
     unsigned counts[STATE_MAX];
     unsigned char c;
 
@@ -480,6 +480,7 @@ parse_chunk_p(const unsigned char *buf, size_t length, unsigned *inout_state)
 
     /* This is the inner-loop where 99.9% of the execution time of this program will
      * be spent. */
+    end = buf + length;
     while (buf < end) {
         c = *buf++;
         state = table[state][c];
