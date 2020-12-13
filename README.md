@@ -9,7 +9,7 @@ a different *algorithm*. We implement it in both C and JavaScript,
 both of which result in a program that's faster than the
 built-in `wc` program.
 
-The algorithm is known as an "asynchronous state-mchine parser".
+The algorithm is known as an "asynchronous state-machine parser".
 The code is written for correct parsing of UTF-8, though the concept
 can be extended to support any character-set without changing
 the fundamental algorithm or benchmark speed.
@@ -89,7 +89,7 @@ The numbers reported come from the `time` command, the number of seconds for
 
 These results tell us:
 
-* Illegal characters (in `pocorgtfo18.pdf`) slows things down a lot,
+* Illegal characters (in `pocorgtfo18.pdf`) slow things down a lot,
   twice as slow on macOS, 10x slower on Linux.
 * Text that randomly switches between spaces and words is much slower
   than text containing all the same character.
