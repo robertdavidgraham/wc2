@@ -143,6 +143,7 @@ techniques.
 The minimalistic `wc2o.c` program is shown below in its entirety. We've hard-coded the
 state-machine here.
 
+```
 #include <stdio.h>
 int main(void)
 {
@@ -166,13 +167,15 @@ int main(void)
                 counts[0] + counts[1] + counts[2] + counts[3]);
     return 0;
 }
+```
 
 The key part that does all the word counting is in the two lines inside:
-
+```
     while ((c = getchar()) != EOF) {
         state = table[state][column[c]];
         counts[state]++;
     }
+```
 
 This is only defined for ASCII, so you can see the state-machine on a
 single-line in the code (`table`).
