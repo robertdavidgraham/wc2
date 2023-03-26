@@ -113,7 +113,7 @@ example of this is "ShiftJIS" for Japanese.
 
 When a C program starts up, the current character set is set to "C", which
 is usually a single-byte character set related to either ASCII or EBCDIC.
-Calling `setlocale(LC_CYPE,"")` causes the program to parse environmental
+Calling `setlocale(LC_CTYPE,"")` causes the program to parse environmental
 variables and reset the character-set accordingly.
 
 Linux GNU coreutils always sets the locale this way, so the "word" count
