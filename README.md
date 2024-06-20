@@ -14,7 +14,7 @@ The algorithm is known as an "asynchronous state-machine parser".
 It's a technique for *parsing* that you don't learn in college.
 It's more *efficient*, but more importantly, it's more *scalable*.
 That's why your browser uses a state-machine to parse GIFs,
-and most web servers use state-machiens to parse incoming HTTP requests.
+and most web servers use state-machines to parse incoming HTTP requests.
 
 This projects contains three versions:
 * `wc2o.c` is a simplified 25 line version highlighting the idea
