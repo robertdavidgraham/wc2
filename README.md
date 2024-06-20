@@ -14,7 +14,7 @@ The algorithm is known as an "asynchronous state-machine parser".
 It's a technique for *parsing* that you don't learn in college.
 It's more *efficient*, but more importantly, it's more *scalable*.
 That's why your browser uses a state-machine to parse GIFs,
-and most web servers use state-machiens to parse incoming HTTP requests.
+and most web servers use state-machines to parse incoming HTTP requests.
 
 This projects contains three versions:
 * `wc2o.c` is a simplified 25 line version highlighting the idea
@@ -65,7 +65,7 @@ more character-sets, and we don't do that. But by implementing UTF-8, we've
 shown that it's possible, and that the speed for any character-set is the same.
 
 Another simplification is how invalid input is handled. The original `wc` program
-largley ignores errors, but it's still an important factor in making sure you
+largely ignores errors, but it's still an important factor in making sure you
 are doing things correctly.
 
 ## Benchmark input files
@@ -154,7 +154,7 @@ These results tell us:
 
 The algorithm is *faster*, but more importantly, it's more *scalable*.
 
-Such scalability isn't usefull for `wc`, but is incredibly important for network
+Such scalability isn't useful for `wc`, but is incredibly important for network
 programs. Consider an HTTP web-server. The traditional way that the Apache web-server
 worked was by reading the entire header in and buffering it, before then parsing
 the header. This need to buffer the entire header caused an enormous scalability
@@ -214,7 +214,7 @@ single-line in the code (`table`).
 
 This project includes additional tools:
  * `wctool` to generate large test files
- * `wcdiff` to find difference between two implementatins of `wc`
+ * `wcdiff` to find difference between two implementations of `wc`
  * `wcstream` to fragment input files (demonstrates a bug in macOS's `wc`)
 
 
