@@ -6,7 +6,7 @@ classic `wc` program in various programming *languages*, to
 
 This project does something different.
 Instead of a different *language* it uses a different *algorithm*.
-The new algorithm is significantly faster -- implementing in a
+The new algorithm is significantly faster -- implementing it in a
 slow language like JavaScript is still faster than the original
 `wc` program written in C.
 
@@ -14,7 +14,7 @@ The algorithm is known as an "asynchronous state-machine parser".
 It's a technique for *parsing* that you don't learn in college.
 It's more *efficient*, but more importantly, it's more *scalable*.
 That's why your browser uses a state-machine to parse GIFs,
-and most web servers use state-machiens to parse incoming HTTP requests.
+and most web servers use state-machines to parse incoming HTTP requests.
 
 This projects contains three versions:
 * `wc2o.c` is a simplified 25 line version highlighting the idea
@@ -41,19 +41,19 @@ up the state-machine.
 
 The state-machine table is the difference between the simple version
 (`wc2o.c`) and complex version (`wc2.c`) of the program. The algorithm
-is the same, the one shown above, the difference is in how they setup
-the table. The simple program creates a table for ASCII, the complex
+is the same (the one shown above) - the difference is in how they set up
+the table. The simple program creates a table for ASCII, while the complex
 program creates a much larger table supporting UTF-8.
 
 
 ## How `wc` works
 
 The `wc` word-count program counts the number of words in a file. A "word"
-is some non-space characters separate by space.
+is some non-space characters separated by space.
 
-Those who re-implement `wc` simplify the problem by only doing ASCII instead
-of the full UTF-8 Unicode. This is cheating, because much of the speed of
-`wc` comes from its need to handle character-sets like UTF-8.
+Those who re-implement `wc` simplify the problem by only  supporting ASCII instead
+of the full UTF-8 Unicode. This is cheating, because much of 
+`wc`'s slowness comes from its need to handle character-sets like UTF-8.
 The real programs spend most of their time
 in functions like `mbrtowc()` to parse multi-byte characters and
 `iswspace()` to test if they are spaces -- which re-implementations
@@ -90,7 +90,7 @@ probably already set to this on new systems, but do this to make sure:
 When running `wc`, the `-lwc` is the default for counting words in ASCII text.
 To convert it into UTF-8 "multi-byte" mode, change `c` o `m`, as in `-lwm`.
 
-The numbers are reported come from the Unix `time` command, the number of seconds for
+The numbers reported come from the Unix `time` command, the number of seconds for
 `user` time. In other words, `elapsed` time or `system` time aren't reported.
 
 The following table shows benchmarking a 2019 x86 MacBook Air of the old
@@ -126,8 +126,8 @@ These results tell us:
 
 ## Our benchmarks
 
-The time for our algorithm, in C and JavaScript, are the following.
-The state-machine parser is immune to input type, all the input files
+The times for our algorithm, in C and JavaScript, are below.
+The state-machine parser is immune to input type: all the input files
 show the same results.
 
 | Program | Input File   | macOS | Linux |
@@ -146,7 +146,7 @@ These results tell us:
 * I don't know why Node.js behaves differently on macOS and Linux, it's probably just
   due to different versions.
 * A JIT (like NodeJS) works well with simple compute algorithms. This tells
-  us little about it's relative performance in larger programs. All languages
+  us little about its relative performance in larger programs. All languages
   that have a JIT should compile this sort of algorithm to roughly the same
   speed.
 
@@ -154,7 +154,7 @@ These results tell us:
 
 The algorithm is *faster*, but more importantly, it's more *scalable*.
 
-Such scalability isn't usefull for `wc`, but is incredibly important for network
+Such scalability isn't useful for `wc`, but is incredibly important for network
 programs. Consider an HTTP web-server. The traditional way that the Apache web-server
 worked was by reading the entire header in and buffering it, before then parsing
 the header. This need to buffer the entire header caused an enormous scalability
