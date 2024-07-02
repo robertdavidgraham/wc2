@@ -14,7 +14,7 @@ The algorithm is known as an "asynchronous state-machine parser".
 It's a technique for *parsing* that you don't learn in college.
 It's more *efficient*, but more importantly, it's more *scalable*.
 That's why your browser uses a state-machine to parse GIFs,
-and most web servers use state-machiens to parse incoming HTTP requests.
+and most web servers use state-machines to parse incoming HTTP requests.
 
 This projects contains three versions:
 * `wc2o.c` is a simplified 25 line version highlighting the idea
@@ -49,7 +49,7 @@ program creates a much larger table supporting UTF-8.
 ## How `wc` works
 
 The `wc` word-count program counts the number of words in a file. A "word"
-is some non-space characters separate by space.
+is some non-space characters separated by space.
 
 Those who re-implement `wc` simplify the problem by only doing ASCII instead
 of the full UTF-8 Unicode. This is cheating, because much of the speed of
@@ -65,7 +65,7 @@ more character-sets, and we don't do that. But by implementing UTF-8, we've
 shown that it's possible, and that the speed for any character-set is the same.
 
 Another simplification is how invalid input is handled. The original `wc` program
-largley ignores errors, but it's still an important factor in making sure you
+largely ignores errors, but it's still an important factor in making sure you
 are doing things correctly.
 
 ## Benchmark input files
@@ -137,9 +137,9 @@ show the same results.
 
 These results tell us:
 
-* This state machine approach always results in the same speed, regardless
+* This state-machine approach always results in the same speed, regardless
   of input.
-* This state machine approach is faster than the built-in programs.
+* This state-machine approach is faster than the built-in programs.
 * Even written in JavaScript, the state machine approach is competitive in speed.
 * The difference in macOS and Linux speed is actually the difference in `clang` and `gcc`
   speed. The LLVM `clang` compiler is doing better optimizations for x86 processors here.
