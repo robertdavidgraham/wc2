@@ -14,7 +14,7 @@ The algorithm is known as an "asynchronous state-machine parser".
 It's a technique for *parsing* that you don't learn in college.
 It's more *efficient*, but more importantly, it's more *scalable*.
 That's why your browser uses a state-machine to parse GIFs,
-and most web servers use state-machiens to parse incoming HTTP requests.
+and most web servers use state-machines to parse incoming HTTP requests.
 
 This projects contains three versions:
 * `wc2o.c` is a simplified 25 line version highlighting the idea
@@ -49,7 +49,7 @@ program creates a much larger table supporting UTF-8.
 ## How `wc` works
 
 The `wc` word-count program counts the number of words in a file. A "word"
-is some non-space characters separate by space.
+is some non-space characters separated by space.
 
 Those who re-implement `wc` simplify the problem by only doing ASCII instead
 of the full UTF-8 Unicode. This is cheating, because much of the speed of
@@ -90,10 +90,10 @@ probably already set to this on new systems, but do this to make sure:
 When running `wc`, the `-lwc` is the default for counting words in ASCII text.
 To convert it into UTF-8 "multi-byte" mode, change `c` o `m`, as in `-lwm`.
 
-The numbers are reported come from the Unix `time` command, the number of seconds for
+The numbers reported come from the Unix `time` command, the number of seconds for
 `user` time. In other words, `elapsed` time or `system` time aren't reported.
 
-The following table shows benchmarking a 2019 x86 MacBook Air of the old
+The following table shows benchmarking a 2019 x86 MacBook Air with the old
 `wc` program. As you can see, it has a wide variety of speeds depending
 on input.
 
@@ -126,7 +126,7 @@ These results tell us:
 
 ## Our benchmarks
 
-The time for our algorithm, in C and JavaScript, are the following.
+The times for our algorithm, in C and JavaScript, are the following.
 The state-machine parser is immune to input type, all the input files
 show the same results.
 
